@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Solo la cuenta del administrador puede leer peticiones y editar la página.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'admin@iglesiajesuseselrey.app';
+    }
+
+    // Peticiones: cualquiera puede ENVIAR una, nadie más que el admin puede verlas.
+    match /peticiones/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','tema','texto','fecha','orado'])
+        && request.resource.data.anonimo is bool
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
+        && request.resource.data.tema is string && request.resource.data.tema.size() <= 40
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 1200
+        && request.resource.data.orado == false
+        && request.resource.data.fecha == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Contenido de la página: todos lo ven, solo el admin lo cambia.
+    match /sitio/{doc}     { allow read: if true; allow write: if isAdmin(); }
+    match /eventos/{id}    { allow read: if true; allow write: if isAdmin(); }
+    match /noticias/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /videos/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /fotos/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin()
+        && (request.resource == null || (request.resource.data.data is string && request.resource.data.data.size() < 950000));
+    }
+
+    // Todo lo demás: cerrado.
+    match /{path=**} { allow read, write: if false; }
+  }
+}
