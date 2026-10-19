@@ -1,29 +1,40 @@
-rules_version = '2'; 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // pastor: solo lee y maneja las peticiones de oración.
-    function isPastor() {
-      return request.auth != null
-        && request.auth.token.email == 'pastor@iglesiajesuseselrey.app';
+    function es(correo) {
+      return request.auth != null && request.auth.token.email == correo;
     }
-    // admin: edita el contenido de la página, pero NO ve las peticiones.
-    function isAdmin() {
-      return request.auth != null
-        && request.auth.token.email == 'admin@iglesiajesuseselrey.app';
+    function isAdmin()       { return es('admin@iglesiajesuseselrey.app'); }
+    function isPastores()    { return es('pastores@iglesiajesuseselrey.app'); }
+    function isMatrimonios() { return es('matrimonios@iglesiajesuseselrey.app'); }
+    function isJovenes()     { return es('jovenes@iglesiajesuseselrey.app'); }
+    function soloCambia(campo) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([campo]);
     }
 
-    // Peticiones: cualquiera puede ENVIAR; solo el pastor puede verlas.
+    // Peticiones: cualquiera puede ENVIAR.
+    // pastores ve todas; matrimonios y jovenes solo las dirigidas a ellos; admin no ve ninguna.
     match /peticiones/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','tema','texto','fecha','orado'])
+      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','destino','tema','texto','fecha'])
         && request.resource.data.anonimo is bool
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
+        && request.resource.data.contactar is bool
+        && request.resource.data.telefono is string && request.resource.data.telefono.size() <= 20
+        && request.resource.data.destino in ['general','matrimonios','jovenes']
         && request.resource.data.tema is string && request.resource.data.tema.size() <= 40
         && request.resource.data.texto is string
         && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 1200
-        && request.resource.data.orado == false
-        && request.resource.data.fecha == request.time;
-      allow read, update, delete: if isPastor();
+        && request.resource.data.fecha == request.time
+        && (request.resource.data.anonimo == false
+            || (request.resource.data.nombre == '' && request.resource.data.contactar == false && request.resource.data.telefono == ''));
+      allow read: if isPastores()
+        || (isMatrimonios() && resource.data.destino == 'matrimonios')
+        || (isJovenes() && resource.data.destino == 'jovenes');
+      allow update: if (isPastores() && soloCambia('oradoPastores'))
+        || (isMatrimonios() && resource.data.destino == 'matrimonios' && soloCambia('oradoMatrimonios'))
+        || (isJovenes() && resource.data.destino == 'jovenes' && soloCambia('oradoJovenes'));
+      allow delete: if isPastores();
     }
 
     // Cinta bíblica: cualquiera la lee y solo puede avanzarla de uno en uno.
@@ -33,7 +44,7 @@ service cloud.firestore {
       allow update: if request.resource.data.keys().hasOnly(['i']) && request.resource.data.i == resource.data.i + 1;
     }
 
-    // Contenido de la página: todos lo ven, solo el admin lo cambia.
+    // Contenido de la página (incluye SINPE): todos lo ven, solo el admin lo cambia.
     match /sitio/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /eventos/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /noticias/{id}   { allow read: if true; allow write: if isAdmin(); }

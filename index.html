@@ -135,12 +135,43 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 
 .drawer-bg{position:fixed;inset:0;z-index:40;background:var(--shade);opacity:0;transition:opacity .25s}
 .drawer-bg.open{opacity:1}
-.drawer{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(560px,100%);background:var(--bg);box-shadow:-16px 0 40px -20px var(--shade);display:grid;grid-template-rows:auto 1fr;transform:translateX(100%);transition:transform .28s ease}
+.drawer{position:fixed;top:0;left:0;bottom:0;z-index:41;width:min(560px,100%);background:var(--bg);box-shadow:16px 0 40px -20px var(--shade);display:grid;grid-template-rows:auto 1fr;transform:translateX(-100%);transition:transform .28s ease}
+.drawer.menu{width:min(340px,88%)}
 .drawer.open{transform:none}
-.drawer header{background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 14px 16px;display:flex;align-items:center;gap:12px}
-.drawer header h2{font-size:22px;flex:1;color:#fff}
-.drawer header button{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer}
-.drawer .body{overflow:auto;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) 16px;display:grid;gap:16px;align-content:start;overscroll-behavior:contain}
+.drawer header{background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 14px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
+.drawer header h2{font-size:22px;flex:1;color:#fff;min-width:0}
+.drawer header button{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.drawer .body{overflow:auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:16px;align-content:start;overscroll-behavior:contain}
+.menulist{display:grid;gap:8px}
+.menulist button,.menulist a{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--ink);text-decoration:none;font:inherit}
+.menulist button:hover,.menulist a:hover{border-color:var(--accent)}
+.menulist .ic{width:44px;height:44px;border-radius:12px;background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));display:grid;place-items:center}
+.menulist .ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.menulist b{display:block;font-size:16px;font-weight:800}
+.menulist small{display:block;font-size:13px;color:var(--muted)}
+.menulist .arr{color:var(--muted);font-size:22px}
+.menubtn{display:inline-flex!important;align-items:center;gap:8px;background:var(--accent)!important;color:var(--accent-ink)!important}
+.menubtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+
+/* Eventos plegables */
+details.ev{display:block;padding:0}
+details.ev summary{list-style:none;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px 14px;cursor:pointer}
+details.ev summary::-webkit-details-marker{display:none}
+details.ev .date{padding:6px 4px}
+details.ev .d{font-size:26px}
+details.ev summary h3{margin:0;font-size:17px}
+details.ev .chev{color:var(--muted);font-size:20px;transition:transform .2s}
+details.ev[open] .chev{transform:rotate(90deg)}
+details.ev .more{padding:0 16px 16px 92px;display:grid;gap:6px}
+@media (max-width:520px){details.ev .more{padding-left:16px}}
+
+/* SINPE */
+.sinpe{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}
+@media (max-width:520px){.sinpe{grid-template-columns:1fr}}
+.sinpe .num{font-family:var(--font-display);font-size:clamp(28px,7vw,36px);font-weight:800;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.sinpe .badge-s{display:inline-block;background:var(--soft);color:var(--ink);border-radius:8px;padding:2px 10px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.sinpe p{margin:0;color:var(--muted)}
+.sinpe .who2{color:var(--ink);font-weight:700}
 
 .bsearch{display:flex;gap:8px}
 .bsearch input{flex:1;min-width:0}
@@ -280,16 +311,28 @@ const firebaseConfig = {
   appId: "1:1095762950405:web:e379f796c9cdcc79ca1f6c"
 };
 /* Usuarios de administración (deben coincidir con las reglas de Firestore).
-   pastor: solo ve las peticiones de oración.
-   admin:  edita eventos, noticias, fotos, videos, directo y Zoom; no ve peticiones. */
+   admin:        edita eventos, fotos, videos, directo, Zoom y SINPE; no ve peticiones.
+   pastores:     ve TODAS las peticiones.
+   matrimonios:  ve solo las peticiones dirigidas a los Pastores de Matrimonios.
+   jovenes:      ve solo las peticiones dirigidas a los Pastores de Jóvenes. */
 const USUARIOS = {
-  pastor: { email: "pastor@iglesiajesuseselrey.app", rol: "pastor" },
-  admin:  { email: "admin@iglesiajesuseselrey.app",  rol: "admin" }
+  admin:       { email: "admin@iglesiajesuseselrey.app",       rol: "admin" },
+  pastores:    { email: "pastores@iglesiajesuseselrey.app",    rol: "pastores" },
+  matrimonios: { email: "matrimonios@iglesiajesuseselrey.app", rol: "matrimonios" },
+  jovenes:     { email: "jovenes@iglesiajesuseselrey.app",     rol: "jovenes" }
+};
+/* A quién va dirigida la petición */
+const DESTINOS = { general: "Pastores", matrimonios: "Pastores de Matrimonios", jovenes: "Pastores de Jóvenes" };
+/* Configuración de cada buzón de pastores */
+const BUZON = {
+  pastores:    { titulo: "Buzón de los Pastores",              campo: "oradoPastores",    filtro: null },
+  matrimonios: { titulo: "Buzón de Pastores de Matrimonios",   campo: "oradoMatrimonios", filtro: "matrimonios" },
+  jovenes:     { titulo: "Buzón de Pastores de Jóvenes",       campo: "oradoJovenes",     filtro: "jovenes" }
 };
 /* ===================================================================== */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const LOGO = "data:image/png;base64,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";
@@ -349,6 +392,7 @@ const app = initializeApp(firebaseConfig);
 const fb = getFirestore(app), auth = getAuth(app);
 
 const DEFAULT = { iglesia:"Iglesia Jesús es el Rey", lema:"Pasión por su Presencia", facebook:"",
+  sinpe:{numero:"",nombre:"",nota:""},
   vivo:{activo:false,url:"",titulo:"Culto dominical"}, zoom:{url:"",titulo:"",fecha:"",hora:"",id:"",clave:""} };
 let D = { cfg: structuredClone(DEFAULT), eventos:[], noticias:[], videos:[] };
 let fotoCache = new Map();
@@ -400,8 +444,19 @@ async function avanzarCinta(){
 const ICON = {
   foto:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-7 7"/></svg>',
   video:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="M17 10l4-2v8l-4-2z"/></svg>',
-  biblia:'<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M12 6.5v5M9.5 9h5"/></svg>'
+  biblia:'<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M12 6.5v5M9.5 9h5"/></svg>',
+  sinpe:'<svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/><path d="M12 7v6M9.5 9.5 12 7l2.5 2.5"/></svg>',
+  llave:'<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l2 2M15 8l2 2"/></svg>',
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
 };
+function sinpeHTML(){
+  const s = D.cfg.sinpe || {};
+  if (!s.numero) return "";
+  return `<section id="sinpe"><div><h2>Ofrendas y diezmos</h2><p class="sub">Puedes dar tu ofrenda por SINPE Móvil.</p></div>
+    <div class="sinpe"><div><span class="badge-s">SINPE Móvil</span><div class="num">${esc(s.numero)}</div></div>
+      <div style="display:grid;gap:8px">${s.nombre?`<p>A nombre de <span class="who2">${esc(s.nombre)}</span></p>`:""}${s.nota?`<p>${esc(s.nota)}</p>`:""}
+      <div><button class="btn small" data-copy="${esc(String(s.numero).replace(/\D/g,""))}">Copiar número</button></div></div></div></section>`;
+}
 function renderPublic(){
   const c = D.cfg, z = c.zoom || {}, v = c.vivo || {};
   const live = v.activo && okUrl(v.url);
@@ -417,17 +472,13 @@ function renderPublic(){
   </div></header>
   <div class="cinta" id="cinta" aria-live="polite"><div class="wrap">${cintaHTML()}</div></div>
   <nav class="nav" aria-label="Secciones"><div class="wrap">
+    <button class="menubtn" data-panel="menu" aria-label="Abrir menú">${ICON.menu}Menú</button>
     <a href="#envivo" class="${live?"live":""}">${live?"● En vivo ahora":"En vivo y Zoom"}</a>
     <a href="#eventos">Eventos</a>
     <a href="#oracion">Oración</a>
-    <button data-panel="fotos">Fotos</button><button data-panel="videos">Videos</button><button data-panel="biblia">Biblia</button>
+    ${D.cfg.sinpe?.numero?`<a href="#sinpe">SINPE</a>`:""}
   </div></nav>
   <main class="wrap">
-    <div class="tiles">
-      <button class="tile" data-panel="fotos"><span class="ic">${ICON.foto}</span><span><b>Fotos y noticias</b><span class="t2">${D.noticias.length ? `${D.noticias.length} ${D.noticias.length===1?"publicación":"publicaciones"}` : "Nuestras actividades"}</span></span><span class="arr">›</span></button>
-      <button class="tile" data-panel="videos"><span class="ic">${ICON.video}</span><span><b>Videos</b><span class="t2">${D.videos.length ? `${D.videos.length} ${D.videos.length===1?"video":"videos"}` : "Prédicas y alabanzas"}</span></span><span class="arr">›</span></button>
-      <button class="tile" data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><span class="t2">Nueva Traducción Viviente</span></span><span class="arr">›</span></button>
-    </div>
     <section id="envivo">
       <div><h2>Acompáñanos</h2><p class="sub">Cultos en vivo por Facebook y reuniones por Zoom.</p></div>
       <div class="grid2">
@@ -449,8 +500,8 @@ function renderPublic(){
       </div>
     </section>
     <section id="eventos">
-      <div><h2>Próximos eventos</h2><p class="sub">¡Te esperamos!</p></div>
-      <div class="events">${eventos.length?eventos.map(e=>evHTML(e)).join(""):`<div class="empty">Pronto publicaremos nuestros próximos eventos.</div>`}</div>
+      <div><h2>Próximos eventos</h2><p class="sub">Toca un evento para ver la hora, el lugar y los detalles.</p></div>
+      <div class="events">${eventos.length?eventos.map(e=>evPublicHTML(e)).join(""):`<div class="empty">Pronto publicaremos nuestros próximos eventos.</div>`}</div>
     </section>
     <section id="oracion">
       <div class="prayer">
@@ -460,11 +511,19 @@ function renderPublic(){
         <div class="card" id="pcard"></div>
       </div>
     </section>
+    ${sinpeHTML()}
   </main>
   <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong>
     ${okUrl(c.facebook)?`<a href="${esc(c.facebook)}" target="_blank" rel="noopener">Síguenos en Facebook</a>`:""}
     <button class="adminlink" data-act="login">Acceso de administración</button></div></footer>`;
   renderPrayerForm();
+}
+function evPublicHTML(e){
+  const d = parseD(e.fecha);
+  const hay = e.hora || e.lugar || e.desc;
+  return `<details class="ev"><summary><div class="date">${d?`<span class="m">${MESES[d.getMonth()]}</span><span class="d">${d.getDate()}</span><span class="w">${DIAS[d.getDay()]}</span>`:""}</div>
+    <h3>${esc(e.titulo)}</h3><span class="chev" aria-hidden="true">›</span></summary>
+    <div class="more">${d?`<div class="info"><span>📅 ${esc(fechaLarga(e.fecha))}</span></div>`:""}<div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}</div></details>`;
 }
 function evHTML(e, admin){
   const d = parseD(e.fecha);
@@ -487,22 +546,42 @@ function vHTML(v, admin){
 
 /* ---------------- Paneles laterales ---------------- */
 let drawerEl = null;
+const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV"};
 function openPanel(name, fromHistory){
-  const titles = {fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV"};
-  if (!titles[name]) return;
-  closePanel(true);
-  const bg = document.createElement("div"); bg.className = "drawer-bg";
-  const d = document.createElement("aside"); d.className = "drawer"; d.setAttribute("role","dialog"); d.setAttribute("aria-modal","true"); d.setAttribute("aria-label", titles[name]);
-  d.innerHTML = `<header><h2>${titles[name]}</h2><button data-close-panel>Cerrar ✕</button></header><div class="body" id="pbody"></div>`;
-  document.body.append(bg, d); document.body.classList.add("locked");
-  drawerEl = {bg, d};
-  requestAnimationFrame(() => requestAnimationFrame(() => { bg.classList.add("open"); d.classList.add("open"); }));
-  const back = () => { if (history.state?.panel) history.back(); else closePanel(); };
-  bg.addEventListener("click", back);
-  $("[data-close-panel]", d).addEventListener("click", back);
-  if (!fromHistory) history.pushState({panel:name}, "", "#"+name);
+  if (!PANELES[name]) return;
+  const reuse = drawerEl && !drawerEl.closing;
+  let bg, d;
+  if (reuse) { ({bg, d} = drawerEl); }
+  else {
+    bg = document.createElement("div"); bg.className = "drawer-bg";
+    d = document.createElement("aside"); d.className = "drawer"; d.setAttribute("role","dialog"); d.setAttribute("aria-modal","true");
+    document.body.append(bg, d); document.body.classList.add("locked");
+    drawerEl = {bg, d};
+    requestAnimationFrame(() => requestAnimationFrame(() => { bg.classList.add("open"); d.classList.add("open"); }));
+    bg.addEventListener("click", closeAll);
+  }
+  d.classList.toggle("menu", name === "menu");
+  d.setAttribute("aria-label", PANELES[name]);
+  const sub = name !== "menu";
+  d.innerHTML = `<header>${sub?`<button data-back-menu aria-label="Volver al menú">‹ Menú</button>`:""}<h2>${PANELES[name]}</h2><button data-close-panel>Cerrar ✕</button></header><div class="body" id="pbody"></div>`;
+  $("[data-close-panel]", d).addEventListener("click", closeAll);
+  if (sub) $("[data-back-menu]", d).addEventListener("click", () => { if (history.state?.panel && history.state.depth === 2) history.back(); else openPanel("menu"); });
+  if (!fromHistory) {
+    const depth = (history.state?.panel && name !== "menu") ? 2 : 1;
+    if (history.state?.panel && name === "menu") history.replaceState({panel:"menu", depth:1}, "", "#menu");
+    else history.pushState({panel:name, depth}, "", "#"+name);
+  }
   const body = $("#pbody", d);
-  if (name === "fotos") {
+  if (name === "menu") {
+    const s = D.cfg.sinpe || {};
+    body.innerHTML = `<div class="menulist">
+      <button data-panel="fotos"><span class="ic">${ICON.foto}</span><span><b>Fotos y noticias</b><small>${D.noticias.length ? `${D.noticias.length} ${D.noticias.length===1?"publicación":"publicaciones"}` : "Nuestras actividades"}</small></span><span class="arr">›</span></button>
+      <button data-panel="videos"><span class="ic">${ICON.video}</span><span><b>Videos</b><small>${D.videos.length ? `${D.videos.length} ${D.videos.length===1?"video":"videos"}` : "Prédicas y alabanzas"}</small></span><span class="arr">›</span></button>
+      <button data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><small>Nueva Traducción Viviente</small></span><span class="arr">›</span></button>
+      ${s.numero?`<button data-goto="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>${esc(s.numero)}</small></span><span class="arr">›</span></button>`:""}
+      <button data-act="login"><span class="ic">${ICON.llave}</span><span><b>Administración</b><small>Solo para pastores y equipo</small></span><span class="arr">›</span></button>
+    </div>`;
+  } else if (name === "fotos") {
     const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
     body.innerHTML = list.length ? `<div class="cards">${list.map(n=>nHTML(n)).join("")}</div>` : `<div class="empty">Pronto compartiremos fotos y noticias de nuestras actividades.</div>`;
     fillPhotos(body);
@@ -520,6 +599,10 @@ function closePanel(instant){
   bg.classList.remove("open"); d.classList.remove("open");
   document.body.classList.remove("locked");
   setTimeout(() => { bg.remove(); d.remove(); }, instant ? 0 : 280);
+}
+function closeAll(){
+  const depth = history.state?.panel ? (history.state.depth || 1) : 0;
+  if (depth) history.go(-depth); else closePanel();
 }
 window.addEventListener("popstate", e => {
   const p = e.state?.panel;
@@ -548,13 +631,13 @@ function renderBiblia(body, libro){
 }
 
 /* ---------------- Formulario de petición (solo escribir) ---------------- */
-let lastSent = 0;
+let lastSent = 0, lastContact = false;
 function renderPrayerForm(done){
   const c = $("#pcard"); if (!c) return;
   if (done) {
     const [t, r] = CINTA[cintaIdx];
     c.innerHTML = `<div class="done"><div class="ring" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-      <h3>Tu petición fue enviada</h3><p>Estaremos orando por ti. Aquí tienes una palabra para hoy:</p>
+      <h3>Tu petición fue enviada</h3><p>${lastContact?"Un pastor te contactará pronto. ":""}Estaremos orando por ti. Aquí tienes una palabra para hoy:</p>
       <div class="palabra">“${esc(t)}”<small>${esc(r)}</small></div>
       <button class="btn ghost" type="button" data-act="otra">Escribir otra petición</button></div>`;
     return;
@@ -565,17 +648,31 @@ function renderPrayerForm(done){
         <input type="radio" name="modo" id="m-anon" value="anon" checked><label for="m-anon"><b>Anónima</b><span>Sin tu nombre</span></label>
         <input type="radio" name="modo" id="m-nom" value="nombre"><label for="m-nom"><b>Con mi nombre</b><span>Para orar por ti</span></label>
       </div></div>
-    <div class="field" id="nf" hidden><label class="label" for="p-nombre">Tu nombre</label><input type="text" id="p-nombre" maxlength="60" autocomplete="name" placeholder="Ej.: María Fernanda"></div>
+    <div id="nf" hidden style="display:grid;gap:20px">
+      <div class="field"><label class="label" for="p-nombre">Tu nombre</label><input type="text" id="p-nombre" maxlength="60" autocomplete="name" placeholder="Ej.: María Fernanda"></div>
+      <div class="field"><span class="label">¿Quieres que te contactemos?</span>
+        <div class="seg" role="radiogroup" aria-label="Contacto">
+          <input type="radio" name="contacto" id="c-si" value="si"><label for="c-si"><b>Sí</b><span>Necesito ayuda</span></label>
+          <input type="radio" name="contacto" id="c-no" value="no" checked><label for="c-no"><b>No</b><span>Solo la petición</span></label>
+        </div></div>
+      <div class="field" id="telf" hidden><label class="label" for="p-tel">Número de celular</label><input type="text" id="p-tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej.: 8888 7777"><p class="hint">Un pastor te escribirá o llamará a este número.</p></div>
+    </div>
+    <div class="field"><span class="label">¿Quién quieres que ore por ti?</span><div class="chips">
+      ${Object.entries(DESTINOS).map(([k,v],i)=>`<input type="radio" name="destino" id="d${i}" value="${k}" ${k==="general"?"checked":""}><label for="d${i}">${v}</label>`).join("")}
+    </div></div>
     <div class="field"><span class="label">Motivo</span><div class="chips">
       ${["Salud","Familia","Trabajo y finanzas","Vida espiritual","Acción de gracias","Otro"].map((t,i)=>`<input type="radio" name="tema" id="t${i}" value="${t}" ${t==="Otro"?"checked":""}><label for="t${i}">${t}</label>`).join("")}
     </div></div>
     <div class="field"><label class="label" for="p-texto">Tu petición</label><textarea id="p-texto" maxlength="1200" placeholder="Escribe aquí lo que tienes en tu corazón…"></textarea><div class="count"><span id="pn">0</span> / 1200</div></div>
     <p class="err" id="perr" hidden></p>
     <button class="btn block" type="submit" id="psend">Enviar petición</button>
-    <p class="privacy">Solo el pastor puede leer las peticiones.</p>
+    <p class="privacy">Solo los pastores pueden leer las peticiones.</p>
   </form>`;
   const f = $("#pf");
-  f.addEventListener("change", e => { if (e.target.name==="modo") { const n = e.target.value==="nombre"; $("#nf").hidden = !n; if (n) $("#p-nombre").focus(); } });
+  f.addEventListener("change", e => {
+    if (e.target.name==="modo") { const n = e.target.value==="nombre"; $("#nf").hidden = !n; if (n) $("#p-nombre").focus(); }
+    if (e.target.name==="contacto") { const s = e.target.value==="si"; $("#telf").hidden = !s; if (s) $("#p-tel").focus(); }
+  });
   $("#p-texto").addEventListener("input", e => $("#pn").textContent = e.target.value.length);
   f.addEventListener("submit", async e => {
     e.preventDefault();
@@ -583,13 +680,17 @@ function renderPrayerForm(done){
     const anon = f.querySelector("input[name=modo]:checked").value === "anon";
     const nombre = $("#p-nombre").value.trim(), texto = $("#p-texto").value.trim();
     const tema = f.querySelector("input[name=tema]:checked").value;
+    const destino = f.querySelector("input[name=destino]:checked").value;
+    const contactar = !anon && f.querySelector("input[name=contacto]:checked").value === "si";
+    const telefono = contactar ? $("#p-tel").value.trim() : "";
     if (!anon && !nombre) return err("Escribe tu nombre, o elige “Anónima”.");
+    if (contactar && telefono.replace(/\D/g,"").length < 8) return err("Escribe tu número de celular (8 dígitos) para que podamos contactarte.");
     if (texto.length < 3) return err("Escribe tu petición antes de enviarla.");
     if (Date.now() - lastSent < 20000) return err("Espera unos segundos antes de enviar otra petición.");
     const b = $("#psend"); b.disabled = true; b.textContent = "Enviando…"; err("");
     try {
-      await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, tema, texto, fecha:serverTimestamp(), orado:false });
-      lastSent = Date.now();
+      await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, destino, tema, texto, fecha:serverTimestamp() });
+      lastSent = Date.now(); lastContact = contactar;
       await avanzarCinta();
       renderPrayerForm(true);
     } catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled=false; b.textContent="Enviar petición"; }
@@ -619,9 +720,9 @@ const authMsg = code => ({
 
 function loginModal(first=false){
   modal(`<h3>${first?"Crear contraseña":"Acceso de administración"}</h3>
-    ${first?`<p class="hint">Se hace una sola vez por usuario. Escribe <b>pastor</b> o <b>admin</b> y elige una contraseña de al menos 8 caracteres.</p>`:""}
+    ${first?`<p class="hint">Se hace una sola vez por usuario. Usuarios: <b>admin</b>, <b>pastores</b>, <b>matrimonios</b> o <b>jovenes</b>. Elige una contraseña de al menos 8 caracteres.</p>`:""}
     <form id="lf" novalidate style="gap:14px">
-      <div class="field"><label class="label" for="l-u">Usuario</label><input type="text" id="l-u" autocomplete="username" autocapitalize="none" placeholder="pastor o admin"></div>
+      <div class="field"><label class="label" for="l-u">Usuario</label><input type="text" id="l-u" autocomplete="username" autocapitalize="none" placeholder="admin, pastores, matrimonios o jovenes"></div>
       <div class="field"><label class="label" for="l-p">Contraseña</label><input type="password" id="l-p" autocomplete="${first?"new-password":"current-password"}"></div>
       ${first?`<div class="field"><label class="label" for="l-p2">Repite la contraseña</label><input type="password" id="l-p2" autocomplete="new-password"></div>`:""}
       <label class="check" style="font-weight:600;font-size:14px"><input type="checkbox" id="l-show" style="accent-color:var(--accent)"> Mostrar contraseña</label>
@@ -653,24 +754,30 @@ function loginModal(first=false){
   });
 }
 
-/* ---------------- Panel del pastor: solo peticiones ---------------- */
+/* ---------------- Buzones de pastores ---------------- */
 let reqs = [], rfilter = "pend", unsubReqs = null;
+const tel8 = t => String(t||"").replace(/\D/g,"");
+const waNum = t => { const d = tel8(t); return d.length === 8 ? "506" + d : d; };
 function renderPastor(){
-  const rows = reqs.filter(r => rfilter==="all" || !r.orado);
-  const pend = reqs.filter(r=>!r.orado).length;
+  const B = BUZON[rol]; if (!B) return;
+  const isOr = r => !!r[B.campo];
+  const rows = reqs.filter(r => rfilter==="all" || !isOr(r));
+  const pend = reqs.filter(r => !isOr(r)).length;
   $("#root").innerHTML = `
   <div class="adminbar"><div class="wrap"><b>Peticiones de oración</b>
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:20px">
-    <div class="head"><div><h2>Buzón del pastor</h2><p class="sub">${pend} por orar · ${reqs.length} en total</p></div>
+    <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${reqs.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div>
       <div class="tabs"><button data-rf="pend" aria-pressed="${rfilter==="pend"}">Por orar${pend?`<span class="badge">${pend}</span>`:""}</button><button data-rf="all" aria-pressed="${rfilter==="all"}">Todas</button></div></div>
     <div style="display:grid;gap:12px">
-    ${rows.length ? rows.map(r => `<article class="req ${r.orado?"prayed":""}">
-      <div class="meta"><span class="who">${esc(r.anonimo?"Anónimo":(r.nombre||"Sin nombre"))}</span><span class="tag">${esc(r.tema||"Otro")}</span><span>${r.fecha?.toDate?esc(r.fecha.toDate().toLocaleString("es-CR",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})):""}</span></div>
+    ${rows.length ? rows.map(r => `<article class="req ${isOr(r)?"prayed":""}">
+      <div class="meta"><span class="who">${esc(r.anonimo?"Anónimo":(r.nombre||"Sin nombre"))}</span><span class="tag">${esc(r.tema||"Otro")}</span>${rol==="pastores"&&r.destino&&r.destino!=="general"?`<span class="tag" style="background:var(--accent);color:var(--accent-ink)">Para ${esc(DESTINOS[r.destino]||"")}</span>`:""}<span>${r.fecha?.toDate?esc(r.fecha.toDate().toLocaleString("es-CR",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})):""}</span></div>
+      ${r.contactar&&r.telefono?`<div class="kv"><div><span>📞 Quiere ser contactado</span><b>${esc(r.telefono)}</b></div></div>
+        <div class="tools"><a class="btn small" href="https://wa.me/${waNum(r.telefono)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn small ghost" href="tel:${tel8(r.telefono)}">Llamar</a></div>`:""}
       <p>${esc(r.texto)}</p>
       <div class="tools" style="justify-content:flex-end">
-        <button class="btn small ${r.orado?"ghost":""}" data-pray="${esc(r.id)}">${r.orado?"✓ Orado":"Marcar como orado"}</button>
-        <button class="btn small danger" data-delreq="${esc(r.id)}">Borrar</button>
+        <button class="btn small ${isOr(r)?"ghost":""}" data-pray="${esc(r.id)}">${isOr(r)?"✓ Orado":"Marcar como orado"}</button>
+        ${rol==="pastores"?`<button class="btn small danger" data-delreq="${esc(r.id)}">Borrar</button>`:""}
       </div></article>`).join("")
     : `<div class="empty">${reqs.length?"No hay peticiones pendientes. Gracias por orar.":"Todavía no han llegado peticiones."}</div>`}
     </div>
@@ -687,7 +794,7 @@ function renderAdmin(){
       <button data-tab="ev" aria-pressed="${adminTab==="ev"}">Eventos</button>
       <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y noticias</button>
       <button data-tab="vi" aria-pressed="${adminTab==="vi"}">Videos</button>
-      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom y datos</button>
+      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div id="tab"></div>
   </main>`;
@@ -710,7 +817,7 @@ function renderTab(){
       ${list.length?`<div class="cards">${list.map(v=>vHTML(v,true)).join("")}</div>`:`<div class="empty">No hay videos. Toca “+ Agregar video”.</div>`}</section>`;
   } else {
     const c = D.cfg, v = c.vivo||{}, z = c.zoom||{};
-    t.innerHTML = `<section><h2>Directo, Zoom y datos</h2>
+    t.innerHTML = `<section><h2>Directo, Zoom, SINPE y datos</h2>
       <div class="panel"><h3>Transmisión en vivo</h3>
         <label class="check"><input type="checkbox" id="c-on" ${v.activo?"checked":""}> Estamos en vivo ahora</label>
         <div class="field"><label class="label" for="c-vurl">Enlace del directo de Facebook</label><input type="url" id="c-vurl" value="${esc(v.url)}" placeholder="https://www.facebook.com/.../videos/..."></div>
@@ -721,6 +828,11 @@ function renderTab(){
         <div class="field"><label class="label" for="c-zt">Nombre de la reunión</label><input type="text" id="c-zt" value="${esc(z.titulo)}" placeholder="Ej.: Estudio bíblico"></div>
         <div class="row2"><div class="field"><label class="label" for="c-zf">Fecha</label><input type="date" id="c-zf" value="${esc(z.fecha)}"></div><div class="field"><label class="label" for="c-zh">Hora</label><input type="time" id="c-zh" value="${esc(z.hora)}"></div></div>
         <div class="row2"><div class="field"><label class="label" for="c-zid">ID de reunión</label><input type="text" id="c-zid" value="${esc(z.id)}"></div><div class="field"><label class="label" for="c-zc">Código de acceso</label><input type="text" id="c-zc" value="${esc(z.clave)}"></div></div>
+      </div>
+      <div class="panel"><h3>SINPE Móvil</h3>
+        <div class="field"><label class="label" for="c-sn">Número de SINPE</label><input type="text" id="c-sn" inputmode="tel" value="${esc(c.sinpe?.numero)}" placeholder="Ej.: 8888 7777"><p class="hint">Déjalo vacío para ocultar la sección de SINPE.</p></div>
+        <div class="field"><label class="label" for="c-sname">A nombre de</label><input type="text" id="c-sname" value="${esc(c.sinpe?.nombre)}" placeholder="Ej.: Iglesia Jesús es el Rey"></div>
+        <div class="field"><label class="label" for="c-snota">Nota (opcional)</label><input type="text" id="c-snota" value="${esc(c.sinpe?.nota)}" placeholder="Ej.: En el detalle escribe “Ofrenda” o “Diezmo”."></div>
       </div>
       <div class="panel"><h3>Datos de la iglesia</h3>
         <div class="field"><label class="label" for="c-ig">Nombre</label><input type="text" id="c-ig" value="${esc(c.iglesia)}"></div>
@@ -734,7 +846,9 @@ function renderTab(){
       const err = m => { const p=$("#c-err"); p.textContent=m; p.hidden=!m; };
       for (const [id,n] of [["c-fb","Facebook"],["c-vurl","directo"],["c-zurl","Zoom"]]) if (g(id) && !okUrl(g(id))) return err(`El enlace de ${n} debe empezar con https://`);
       if ($("#c-on").checked && !okUrl(g("c-vurl"))) return err("Pega el enlace del directo para marcar “en vivo”.");
+      if (g("c-sn") && g("c-sn").replace(/\D/g,"").length < 8) return err("El número de SINPE debe tener 8 dígitos.");
       const data = { iglesia:g("c-ig")||DEFAULT.iglesia, lema:g("c-le"), facebook:g("c-fb"),
+        sinpe:{numero:g("c-sn"), nombre:g("c-sname"), nota:g("c-snota")},
         vivo:{activo:$("#c-on").checked, url:g("c-vurl"), titulo:g("c-vt")},
         zoom:{url:g("c-zurl"), titulo:g("c-zt"), fecha:g("c-zf"), hora:g("c-zh"), id:g("c-zid"), clave:g("c-zc")} };
       const b = $("#c-save"); b.disabled = true; b.textContent = "Guardando…";
@@ -892,22 +1006,23 @@ async function lightbox(ids, i){
 }
 
 /* ---------------- Clics ---------------- */
-document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) { if (history.state?.panel) history.back(); else closePanel(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) closeAll(); });
 document.addEventListener("click", async e => {
-  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel]"); if (!el) return;
+  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto]"); if (!el) return;
   if (el.dataset.panel) { openPanel(el.dataset.panel); return; }
+  if (el.dataset.goto) { const id = el.dataset.goto; closeAll(); setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:"smooth"}), 320); return; }
   if (el.dataset.copy !== undefined) { const old = el.textContent; try { await navigator.clipboard.writeText(el.dataset.copy); el.textContent = "Copiado ✓"; } catch { el.textContent = "Cópialo a mano"; } setTimeout(()=>el.textContent=old, 2000); return; }
   if (el.dataset.lb) { const n = D.noticias.find(x=>x.id===el.dataset.lb); if (n) lightbox(n.fotos, +el.dataset.i); return; }
   if (el.dataset.tab) { adminTab = el.dataset.tab; renderAdmin(); return; }
   if (el.dataset.rf) { rfilter = el.dataset.rf; renderPastor(); return; }
-  if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; try { await updateDoc(doc(fb,"peticiones",r.id), {orado:!r.orado}); } catch { toast("No se pudo actualizar."); el.disabled = false; } return; }
+  if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; const campo = BUZON[rol]?.campo; if (!campo) return; try { await updateDoc(doc(fb,"peticiones",r.id), {[campo]:!r[campo]}); } catch { toast("No se pudo actualizar."); el.disabled = false; } return; }
   if (el.dataset.delreq) {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = "¿Seguro? Toca otra vez"; setTimeout(()=>{ if (el.isConnected){ el.dataset.sure=""; el.textContent="Borrar"; } }, 4000); return; }
     try { await deleteDoc(doc(fb,"peticiones",el.dataset.delreq)); toast("Petición borrada"); } catch { toast("No se pudo borrar."); }
     return;
   }
   const a = el.dataset.act;
-  if (a==="login") { if (rol) { view = rol; rol==="pastor" ? renderPastor() : renderAdmin(); } else loginModal(false); return; }
+  if (a==="login") { if (drawerEl) closeAll(); if (rol) { view = rol; rol==="admin" ? renderAdmin() : renderPastor(); window.scrollTo(0,0); } else setTimeout(() => loginModal(false), drawerEl ? 300 : 0); return; }
   if (a==="logout") { await signOut(auth); return; }
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
   if (a==="otra") return renderPrayerForm(false);
@@ -924,17 +1039,20 @@ renderPublic();
 await loadPublic();
 renderPublic();
 const startPanel = location.hash.slice(1);
-if (["fotos","videos","biblia"].includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
+if (["menu","fotos","videos","biblia"].includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
 if (startPanel === "admin") loginModal(false);
 onAuthStateChanged(auth, user => {
   const email = (user?.email || "").toLowerCase();
   rol = Object.values(USUARIOS).find(u => u.email === email)?.rol || null;
   if (unsubReqs) { unsubReqs(); unsubReqs = null; }
   if (user && !rol) { signOut(auth); return; }
-  if (rol === "pastor") {
-    view = "pastor"; renderPastor();
-    unsubReqs = onSnapshot(query(collection(fb,"peticiones"), orderBy("fecha","desc")),
-      snap => { reqs = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view==="pastor") renderPastor(); },
+  if (BUZON[rol]) {
+    const B = BUZON[rol];
+    view = rol; reqs = []; renderPastor();
+    const q = B.filtro ? query(collection(fb,"peticiones"), where("destino","==",B.filtro)) : collection(fb,"peticiones");
+    const ms = r => r.fecha?.toMillis ? r.fecha.toMillis() : (r.fecha?.toDate ? +r.fecha.toDate() : 0);
+    unsubReqs = onSnapshot(q,
+      snap => { reqs = snap.docs.map(d => ({id:d.id, ...d.data()})).sort((a,b) => ms(b) - ms(a)); if (view===rol) renderPastor(); },
       err => { console.error(err); toast("No tienes permiso para ver las peticiones. Revisa las reglas de Firestore."); });
   } else if (rol === "admin") {
     view = "admin"; renderAdmin();
