@@ -160,6 +160,8 @@ details.ev summary::-webkit-details-marker{display:none}
 details.ev .date{padding:6px 4px}
 details.ev .d{font-size:26px}
 details.ev summary h3{margin:0;font-size:17px}
+.date.semanal .dd{font-size:20px!important;letter-spacing:.02em;padding:2px 0}
+.date.semanal .m,.date.semanal .w{font-size:10.5px}
 details.ev .chev{color:var(--muted);font-size:20px;transition:transform .2s}
 details.ev[open] .chev{transform:rotate(90deg)}
 details.ev .more{padding:0 16px 16px 92px;display:grid;gap:6px}
@@ -232,6 +234,14 @@ footer .wrap{display:grid;gap:8px;justify-items:center}
 .who{font-weight:800;color:var(--ink);font-size:15px}
 .tag{background:var(--soft);color:var(--ink);border-radius:999px;padding:1px 10px;font-size:12px}
 .req p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.aviso{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:var(--soft);border:1px solid var(--accent);border-radius:16px;padding:14px 16px}
+.aviso.suave{border-color:var(--line);background:var(--surface)}
+.aviso-ic{font-size:26px}
+.aviso b{display:block;font-size:16px}
+.aviso span{color:var(--muted);font-size:14px}
+@media (max-width:520px){.aviso{grid-template-columns:auto 1fr}.aviso .btn{grid-column:1/-1}}
+.tag.nueva{background:var(--live);color:#fff;font-weight:800}
+.bandejas button{font-size:15px;padding:9px 16px}
 .badge{background:var(--live);color:#fff;border-radius:999px;padding:0 8px;font-size:12px;margin-left:6px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:16px}
 .panel h3{margin:0;font-size:19px;font-weight:800}
@@ -447,21 +457,22 @@ const ICON = {
   biblia:'<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M12 6.5v5M9.5 9h5"/></svg>',
   sinpe:'<svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/><path d="M12 7v6M9.5 9.5 12 7l2.5 2.5"/></svg>',
   llave:'<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l2 2M15 8l2 2"/></svg>',
-  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  fb:'<svg viewBox="0 0 24 24"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/></svg>'
 };
 function sinpeHTML(){
   const s = D.cfg.sinpe || {};
-  if (!s.numero) return "";
-  return `<section id="sinpe"><div><h2>Ofrendas y diezmos</h2><p class="sub">Puedes dar tu ofrenda por SINPE Móvil.</p></div>
+  if (!s.numero) return `<div class="empty">Pronto publicaremos el número de SINPE Móvil de la iglesia.</div>`;
+  return `<div><h2 style="font-size:26px">Ofrendas y diezmos</h2><p class="sub">Puedes dar tu ofrenda por SINPE Móvil.</p></div>
     <div class="sinpe"><div><span class="badge-s">SINPE Móvil</span><div class="num">${esc(s.numero)}</div></div>
       <div style="display:grid;gap:8px">${s.nombre?`<p>A nombre de <span class="who2">${esc(s.nombre)}</span></p>`:""}${s.nota?`<p>${esc(s.nota)}</p>`:""}
-      <div><button class="btn small" data-copy="${esc(String(s.numero).replace(/\D/g,""))}">Copiar número</button></div></div></div></section>`;
+      <div><button class="btn small" data-copy="${esc(String(s.numero).replace(/\D/g,""))}">Copiar número</button></div></div></div>`;
 }
 function renderPublic(){
   const c = D.cfg, z = c.zoom || {}, v = c.vivo || {};
   const live = v.activo && okUrl(v.url);
   const hoy = hoyISO();
-  const eventos = D.eventos.filter(e => (e.fecha||"") >= hoy).sort((a,b)=>((a.fecha||"")+(a.hora||"")).localeCompare((b.fecha||"")+(b.hora||"")));
+  const eventos = D.eventos.filter(e => e.repite === "semanal" || (e.fecha||"") >= hoy).sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
   document.title = c.iglesia || DEFAULT.iglesia;
 
   $("#root").innerHTML = `
@@ -476,7 +487,6 @@ function renderPublic(){
     <a href="#envivo" class="${live?"live":""}">${live?"● En vivo ahora":"En vivo y Zoom"}</a>
     <a href="#eventos">Eventos</a>
     <a href="#oracion">Oración</a>
-    ${D.cfg.sinpe?.numero?`<a href="#sinpe">SINPE</a>`:""}
   </div></nav>
   <main class="wrap">
     <section id="envivo">
@@ -511,24 +521,35 @@ function renderPublic(){
         <div class="card" id="pcard"></div>
       </div>
     </section>
-    ${sinpeHTML()}
   </main>
   <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong>
     ${okUrl(c.facebook)?`<a href="${esc(c.facebook)}" target="_blank" rel="noopener">Síguenos en Facebook</a>`:""}
     <button class="adminlink" data-act="login">Acceso de administración</button></div></footer>`;
   renderPrayerForm();
 }
-function evPublicHTML(e){
+const DIAS_LARGOS = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"];
+const DIAS_CORTOS = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
+function proxima(e){
+  if (e.repite !== "semanal") return e.fecha || "9999";
+  const d = new Date(); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + ((+e.dia - d.getDay() + 7) % 7));
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function cuandoTexto(e){ return e.repite === "semanal" ? `Todos los ${DIAS_LARGOS[+e.dia] || ""}` : fechaLarga(e.fecha); }
+function dateBox(e){
+  if (e.repite === "semanal") return `<div class="date semanal"><span class="m">Todos</span><span class="d dd">${DIAS_CORTOS[+e.dia] || ""}</span><span class="w">cada semana</span></div>`;
   const d = parseD(e.fecha);
+  return `<div class="date">${d?`<span class="m">${MESES[d.getMonth()]}</span><span class="d">${d.getDate()}</span><span class="w">${DIAS[d.getDay()]}</span>`:""}</div>`;
+}
+function evPublicHTML(e){
   const hay = e.hora || e.lugar || e.desc;
-  return `<details class="ev"><summary><div class="date">${d?`<span class="m">${MESES[d.getMonth()]}</span><span class="d">${d.getDate()}</span><span class="w">${DIAS[d.getDay()]}</span>`:""}</div>
-    <h3>${esc(e.titulo)}</h3><span class="chev" aria-hidden="true">›</span></summary>
-    <div class="more">${d?`<div class="info"><span>📅 ${esc(fechaLarga(e.fecha))}</span></div>`:""}<div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}</div></details>`;
+  return `<details class="ev"><summary>${dateBox(e)}
+    <div><h3>${esc(e.titulo)}</h3>${e.repite==="semanal"?`<span class="sub" style="font-size:13px;font-weight:700">${esc(cuandoTexto(e))}</span>`:""}</div><span class="chev" aria-hidden="true">›</span></summary>
+    <div class="more"><div class="info"><span>📅 ${esc(cuandoTexto(e))}</span></div><div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}</div></details>`;
 }
 function evHTML(e, admin){
-  const d = parseD(e.fecha);
-  return `<article class="ev"><div class="date">${d?`<span class="m">${MESES[d.getMonth()]}</span><span class="d">${d.getDate()}</span><span class="w">${DIAS[d.getDay()]}</span>`:""}</div>
-    <div class="body"><h3>${esc(e.titulo)}</h3><div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}</div>
+  return `<article class="ev">${dateBox(e)}
+    <div class="body"><h3>${esc(e.titulo)}</h3><div class="info"><span>📅 ${esc(cuandoTexto(e))}</span>${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}</div>
     ${admin?`<div class="tools"><button class="btn small ghost" data-act="ev-edit" data-id="${esc(e.id)}">Editar</button></div>`:""}</article>`;
 }
 function nHTML(n, admin){
@@ -546,7 +567,7 @@ function vHTML(v, admin){
 
 /* ---------------- Paneles laterales ---------------- */
 let drawerEl = null;
-const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV"};
+const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV", sinpe:"SINPE Móvil"};
 function openPanel(name, fromHistory){
   if (!PANELES[name]) return;
   const reuse = drawerEl && !drawerEl.closing;
@@ -578,9 +599,12 @@ function openPanel(name, fromHistory){
       <button data-panel="fotos"><span class="ic">${ICON.foto}</span><span><b>Fotos y noticias</b><small>${D.noticias.length ? `${D.noticias.length} ${D.noticias.length===1?"publicación":"publicaciones"}` : "Nuestras actividades"}</small></span><span class="arr">›</span></button>
       <button data-panel="videos"><span class="ic">${ICON.video}</span><span><b>Videos</b><small>${D.videos.length ? `${D.videos.length} ${D.videos.length===1?"video":"videos"}` : "Prédicas y alabanzas"}</small></span><span class="arr">›</span></button>
       <button data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><small>Nueva Traducción Viviente</small></span><span class="arr">›</span></button>
-      ${s.numero?`<button data-goto="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>${esc(s.numero)}</small></span><span class="arr">›</span></button>`:""}
+      ${s.numero?`<button data-panel="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>Ofrendas y diezmos</small></span><span class="arr">›</span></button>`:""}
+      ${okUrl(D.cfg.facebook)?`<a href="${esc(D.cfg.facebook)}" target="_blank" rel="noopener"><span class="ic">${ICON.fb}</span><span><b>Síguenos en Facebook</b><small>Noticias y transmisiones</small></span><span class="arr">↗</span></a>`:""}
       <button data-act="login"><span class="ic">${ICON.llave}</span><span><b>Administración</b><small>Solo para pastores y equipo</small></span><span class="arr">›</span></button>
     </div>`;
+  } else if (name === "sinpe") {
+    body.innerHTML = sinpeHTML();
   } else if (name === "fotos") {
     const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
     body.innerHTML = list.length ? `<div class="cards">${list.map(n=>nHTML(n)).join("")}</div>` : `<div class="empty">Pronto compartiremos fotos y noticias de nuestras actividades.</div>`;
@@ -755,23 +779,38 @@ function loginModal(first=false){
 }
 
 /* ---------------- Buzones de pastores ---------------- */
-let reqs = [], rfilter = "pend", unsubReqs = null;
+let reqs = [], rfilter = "pend", rdest = "general", unsubReqs = null, vistoAntes = 0, avisoCerrado = false, primeraCarga = true;
 const tel8 = t => String(t||"").replace(/\D/g,"");
 const waNum = t => { const d = tel8(t); return d.length === 8 ? "506" + d : d; };
+const msDe = r => r.fecha?.toMillis ? r.fecha.toMillis() : (r.fecha?.toDate ? +r.fecha.toDate() : Date.now());
+const destDe = r => r.destino || "general";
+const claveVisto = () => "visto-" + rol;
+function leerVisto(){ try { return +(localStorage.getItem(claveVisto()) || 0); } catch { return 0; } }
+function guardarVisto(t){ try { localStorage.setItem(claveVisto(), String(t)); } catch {} }
+const BANDEJAS = { general: "Para los Pastores", matrimonios: "Matrimonios", jovenes: "Jóvenes" };
 function renderPastor(){
   const B = BUZON[rol]; if (!B) return;
   const isOr = r => !!r[B.campo];
-  const rows = reqs.filter(r => rfilter==="all" || !isOr(r));
-  const pend = reqs.filter(r => !isOr(r)).length;
+  const conBandejas = rol === "pastores";
+  const enBandeja = conBandejas ? reqs.filter(r => destDe(r) === rdest) : reqs;
+  const rows = enBandeja.filter(r => rfilter==="all" || !isOr(r));
+  const pend = enBandeja.filter(r => !isOr(r)).length;
+  const pendDe = k => reqs.filter(r => destDe(r) === k && !isOr(r)).length;
+  const nuevas = reqs.filter(r => msDe(r) > vistoAntes);
+  const permiso = ("Notification" in window) ? Notification.permission : "no";
   $("#root").innerHTML = `
   <div class="adminbar"><div class="wrap"><b>Peticiones de oración</b>
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:20px">
-    <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${reqs.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div>
-      <div class="tabs"><button data-rf="pend" aria-pressed="${rfilter==="pend"}">Por orar${pend?`<span class="badge">${pend}</span>`:""}</button><button data-rf="all" aria-pressed="${rfilter==="all"}">Todas</button></div></div>
+    ${nuevas.length && !avisoCerrado ? `<div class="aviso" role="status"><span class="aviso-ic">🙏</span><div><b>${nuevas.length===1?"1 persona te pidió oración":`${nuevas.length} personas te pidieron oración`}</b><span>desde tu última visita${conBandejas?` · ${["general","matrimonios","jovenes"].map(k=>[k,nuevas.filter(r=>destDe(r)===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${k==="general"?"para ustedes":"de "+BANDEJAS[k]}`).join(", ")}`:""}</span></div><button class="btn small" data-act="aviso-ok">Entendido</button></div>` : ""}
+    ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="activar-avisos">Activar avisos</button></div>` : ""}
+    <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div></div>
+    ${conBandejas ? `<div class="tabs bandejas">${Object.entries(BANDEJAS).map(([k,v])=>`<button data-rdest="${k}" aria-pressed="${rdest===k}">${v}${pendDe(k)?`<span class="badge">${pendDe(k)}</span>`:""}</button>`).join("")}</div>
+      ${rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para los ${esc(DESTINOS[rdest])}. Ellos también las ven en su buzón.</p>`:""}` : ""}
+    <div class="tabs"><button data-rf="pend" aria-pressed="${rfilter==="pend"}">Por orar${pend?`<span class="badge">${pend}</span>`:""}</button><button data-rf="all" aria-pressed="${rfilter==="all"}">Todas</button></div>
     <div style="display:grid;gap:12px">
     ${rows.length ? rows.map(r => `<article class="req ${isOr(r)?"prayed":""}">
-      <div class="meta"><span class="who">${esc(r.anonimo?"Anónimo":(r.nombre||"Sin nombre"))}</span><span class="tag">${esc(r.tema||"Otro")}</span>${rol==="pastores"&&r.destino&&r.destino!=="general"?`<span class="tag" style="background:var(--accent);color:var(--accent-ink)">Para ${esc(DESTINOS[r.destino]||"")}</span>`:""}<span>${r.fecha?.toDate?esc(r.fecha.toDate().toLocaleString("es-CR",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})):""}</span></div>
+      <div class="meta"><span class="who">${esc(r.anonimo?"Anónimo":(r.nombre||"Sin nombre"))}</span>${msDe(r) > vistoAntes ? `<span class="tag nueva">Nueva</span>` : ""}<span class="tag">${esc(r.tema||"Otro")}</span><span>${r.fecha?.toDate?esc(r.fecha.toDate().toLocaleString("es-CR",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})):""}</span></div>
       ${r.contactar&&r.telefono?`<div class="kv"><div><span>📞 Quiere ser contactado</span><b>${esc(r.telefono)}</b></div></div>
         <div class="tools"><a class="btn small" href="https://wa.me/${waNum(r.telefono)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn small ghost" href="tel:${tel8(r.telefono)}">Llamar</a></div>`:""}
       <p>${esc(r.texto)}</p>
@@ -779,9 +818,27 @@ function renderPastor(){
         <button class="btn small ${isOr(r)?"ghost":""}" data-pray="${esc(r.id)}">${isOr(r)?"✓ Orado":"Marcar como orado"}</button>
         ${rol==="pastores"?`<button class="btn small danger" data-delreq="${esc(r.id)}">Borrar</button>`:""}
       </div></article>`).join("")
-    : `<div class="empty">${reqs.length?"No hay peticiones pendientes. Gracias por orar.":"Todavía no han llegado peticiones."}</div>`}
+    : `<div class="empty">${enBandeja.length?"No hay peticiones pendientes aquí. Gracias por orar.":"Todavía no han llegado peticiones aquí."}</div>`}
     </div>
   </main>`;
+}
+async function avisar(r){
+  const titulo = "Nueva petición de oración";
+  const cuerpo = `${r.anonimo ? "Alguien" : (r.nombre || "Alguien")} quiere que ores por ${r.tema ? r.tema.toLowerCase() : "su petición"}.`;
+  toast("🙏 " + cuerpo, 5000);
+  try { navigator.vibrate?.([200, 100, 200]); } catch {}
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration?.();
+    if (reg) await reg.showNotification(titulo, { body: cuerpo, icon: "icon-192.png", badge: "icon-192.png", tag: "peticion-" + r.id });
+    else new Notification(titulo, { body: cuerpo, icon: "icon-192.png" });
+  } catch { try { new Notification(titulo, { body: cuerpo, icon: "icon-192.png" }); } catch {} }
+}
+function actualizarInsignia(){
+  const B = BUZON[rol]; if (!B) return;
+  const n = reqs.filter(r => !r[B.campo] && (rol !== "pastores" || destDe(r) === "general")).length;
+  try { n ? navigator.setAppBadge?.(n) : navigator.clearAppBadge?.(); } catch {}
+  document.title = (n ? `(${n}) ` : "") + (D.cfg.iglesia || DEFAULT.iglesia);
 }
 
 /* ---------------- Panel del administrador: contenido (sin peticiones) ---------------- */
@@ -803,8 +860,8 @@ function renderAdmin(){
 function renderTab(){
   const t = $("#tab"); if (!t) return;
   if (adminTab === "ev") {
-    const list = [...D.eventos].sort((a,b)=>((b.fecha||"")+(b.hora||"")).localeCompare((a.fecha||"")+(a.hora||"")));
-    t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos pasados se ocultan solos en la página.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
+    const list = [...D.eventos].sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
+    t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
       <div class="events">${list.length?list.map(e=>evHTML(e,true)).join(""):`<div class="empty">No hay eventos. Toca “+ Agregar evento”.</div>`}</div></section>`;
   } else if (adminTab === "no") {
     const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
@@ -874,20 +931,36 @@ async function saveItem(col, id, data){
 }
 
 function formEvento(ev){
-  const e = ev || {titulo:"",fecha:"",hora:"",lugar:"",desc:""};
+  const e = ev || {titulo:"",fecha:"",hora:"",lugar:"",desc:"",repite:"",dia:"1"};
+  const sem = e.repite === "semanal";
   modal(`<h3>${ev?"Editar evento":"Nuevo evento"}</h3>
     <div class="field"><label class="label" for="e-t">Nombre del evento</label><input type="text" id="e-t" value="${esc(e.titulo)}" placeholder="Ej.: Vigilia de oración"></div>
-    <div class="row2"><div class="field"><label class="label" for="e-f">Fecha</label><input type="date" id="e-f" value="${esc(e.fecha)}"></div><div class="field"><label class="label" for="e-h">Hora</label><input type="time" id="e-h" value="${esc(e.hora)}"></div></div>
+    <div class="field"><span class="label">¿Cuándo es?</span>
+      <div class="seg" role="radiogroup" aria-label="Repetición">
+        <input type="radio" name="rep" id="r-una" value="" ${sem?"":"checked"}><label for="r-una"><b>Una sola vez</b><span>En una fecha</span></label>
+        <input type="radio" name="rep" id="r-sem" value="semanal" ${sem?"checked":""}><label for="r-sem"><b>Cada semana</b><span>Ej.: todos los lunes</span></label>
+      </div></div>
+    <div class="row2">
+      <div class="field" id="f-fecha" ${sem?"hidden":""}><label class="label" for="e-f">Fecha</label><input type="date" id="e-f" value="${esc(e.fecha)}"></div>
+      <div class="field" id="f-dia" ${sem?"":"hidden"}><label class="label" for="e-dia">Día</label>
+        <select id="e-dia" style="width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px">
+          ${[1,2,3,4,5,6,0].map(i=>`<option value="${i}" ${String(e.dia??"1")===String(i)?"selected":""}>Todos los ${DIAS_LARGOS[i]}</option>`).join("")}
+        </select></div>
+      <div class="field"><label class="label" for="e-h">Hora</label><input type="time" id="e-h" value="${esc(e.hora)}"></div></div>
     <div class="field"><label class="label" for="e-l">Lugar</label><input type="text" id="e-l" value="${esc(e.lugar)}" placeholder="Ej.: Templo principal"></div>
     <div class="field"><label class="label" for="e-d">Detalles (opcional)</label><textarea id="e-d">${esc(e.desc)}</textarea></div>
     <p class="err" id="e-err" hidden></p>${ev?delBlock():""}
     <div class="actions">${ev?'<button class="btn danger" data-del style="margin-right:auto">Borrar</button>':""}<button class="btn ghost" data-close>Cancelar</button><button class="btn" id="e-save">Guardar</button></div>`,
   (m, close) => {
     wireDelete(m, close, async () => { await deleteDoc(doc(fb,"eventos",ev.id)); D.eventos = D.eventos.filter(x=>x.id!==ev.id); });
+    m.addEventListener("change", ev2 => { if (ev2.target.name === "rep") { const w = ev2.target.value === "semanal"; $("#f-fecha",m).hidden = w; $("#f-dia",m).hidden = !w; } });
     $("#e-save",m).addEventListener("click", async () => {
       const g = id => $("#"+id,m).value.trim();
-      if (!g("e-t") || !g("e-f")) { const p=$("#e-err",m); p.textContent="Escribe el nombre y la fecha."; p.hidden=false; return; }
-      const data = {titulo:g("e-t"), fecha:g("e-f"), hora:g("e-h"), lugar:g("e-l"), desc:g("e-d")};
+      const semanal = m.querySelector("input[name=rep]:checked").value === "semanal";
+      if (!g("e-t") || (!semanal && !g("e-f"))) { const p=$("#e-err",m); p.textContent = semanal ? "Escribe el nombre del evento." : "Escribe el nombre y la fecha."; p.hidden=false; return; }
+      const data = semanal
+        ? {titulo:g("e-t"), repite:"semanal", dia:+g("e-dia"), fecha:"", hora:g("e-h"), lugar:g("e-l"), desc:g("e-d")}
+        : {titulo:g("e-t"), repite:"", fecha:g("e-f"), hora:g("e-h"), lugar:g("e-l"), desc:g("e-d")};
       const b = $("#e-save",m); b.disabled = true; b.textContent = "Guardando…";
       try { const id = await saveItem("eventos", ev?.id, data); D.eventos = [...D.eventos.filter(x=>x.id!==id), {id, ...data}]; close(); toast("Evento guardado"); renderTab(); }
       catch (x) { console.error(x); const p=$("#e-err",m); p.textContent="No se pudo guardar."; p.hidden=false; b.disabled=false; b.textContent="Guardar"; }
@@ -1008,13 +1081,14 @@ async function lightbox(ids, i){
 /* ---------------- Clics ---------------- */
 document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) closeAll(); });
 document.addEventListener("click", async e => {
-  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto]"); if (!el) return;
+  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto],[data-rdest]"); if (!el) return;
   if (el.dataset.panel) { openPanel(el.dataset.panel); return; }
   if (el.dataset.goto) { const id = el.dataset.goto; closeAll(); setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:"smooth"}), 320); return; }
   if (el.dataset.copy !== undefined) { const old = el.textContent; try { await navigator.clipboard.writeText(el.dataset.copy); el.textContent = "Copiado ✓"; } catch { el.textContent = "Cópialo a mano"; } setTimeout(()=>el.textContent=old, 2000); return; }
   if (el.dataset.lb) { const n = D.noticias.find(x=>x.id===el.dataset.lb); if (n) lightbox(n.fotos, +el.dataset.i); return; }
   if (el.dataset.tab) { adminTab = el.dataset.tab; renderAdmin(); return; }
   if (el.dataset.rf) { rfilter = el.dataset.rf; renderPastor(); return; }
+  if (el.dataset.rdest) { rdest = el.dataset.rdest; renderPastor(); return; }
   if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; const campo = BUZON[rol]?.campo; if (!campo) return; try { await updateDoc(doc(fb,"peticiones",r.id), {[campo]:!r[campo]}); } catch { toast("No se pudo actualizar."); el.disabled = false; } return; }
   if (el.dataset.delreq) {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = "¿Seguro? Toca otra vez"; setTimeout(()=>{ if (el.isConnected){ el.dataset.sure=""; el.textContent="Borrar"; } }, 4000); return; }
@@ -1023,9 +1097,11 @@ document.addEventListener("click", async e => {
   }
   const a = el.dataset.act;
   if (a==="login") { if (drawerEl) closeAll(); if (rol) { view = rol; rol==="admin" ? renderAdmin() : renderPastor(); window.scrollTo(0,0); } else setTimeout(() => loginModal(false), drawerEl ? 300 : 0); return; }
-  if (a==="logout") { await signOut(auth); return; }
+  if (a==="logout") { if (BUZON[rol]) guardarVisto(Date.now()); try { navigator.clearAppBadge?.(); } catch {} await signOut(auth); return; }
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
   if (a==="otra") return renderPrayerForm(false);
+  if (a==="aviso-ok") { avisoCerrado = true; guardarVisto(Date.now()); renderPastor(); return; }
+  if (a==="activar-avisos") { try { const p = await Notification.requestPermission(); toast(p === "granted" ? "Avisos activados" : "No se activaron los avisos. Puedes activarlos en los permisos del sitio."); } catch { toast("Este navegador no permite avisos."); } renderPastor(); return; }
   if (a==="ev-new") return formEvento();
   if (a==="ev-edit") return formEvento(D.eventos.find(x=>x.id===el.dataset.id));
   if (a==="no-new") return formNoticia();
@@ -1039,7 +1115,7 @@ renderPublic();
 await loadPublic();
 renderPublic();
 const startPanel = location.hash.slice(1);
-if (["menu","fotos","videos","biblia"].includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
+if (["menu","fotos","videos","biblia","sinpe"].includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
 if (startPanel === "admin") loginModal(false);
 onAuthStateChanged(auth, user => {
   const email = (user?.email || "").toLowerCase();
@@ -1048,11 +1124,19 @@ onAuthStateChanged(auth, user => {
   if (user && !rol) { signOut(auth); return; }
   if (BUZON[rol]) {
     const B = BUZON[rol];
-    view = rol; reqs = []; renderPastor();
+    view = rol; reqs = []; rdest = "general"; avisoCerrado = false; primeraCarga = true;
+    vistoAntes = leerVisto();
+    renderPastor();
     const q = B.filtro ? query(collection(fb,"peticiones"), where("destino","==",B.filtro)) : collection(fb,"peticiones");
-    const ms = r => r.fecha?.toMillis ? r.fecha.toMillis() : (r.fecha?.toDate ? +r.fecha.toDate() : 0);
     unsubReqs = onSnapshot(q,
-      snap => { reqs = snap.docs.map(d => ({id:d.id, ...d.data()})).sort((a,b) => ms(b) - ms(a)); if (view===rol) renderPastor(); },
+      snap => {
+        if (!primeraCarga) snap.docChanges().filter(c => c.type === "added").forEach(c => avisar({id:c.doc.id, ...c.doc.data()}));
+        reqs = snap.docs.map(d => ({id:d.id, ...d.data()})).sort((a,b) => msDe(b) - msDe(a));
+        if (primeraCarga && !vistoAntes) { vistoAntes = Date.now(); guardarVisto(vistoAntes); avisoCerrado = true; }
+        primeraCarga = false;
+        actualizarInsignia();
+        if (view===rol) renderPastor();
+      },
       err => { console.error(err); toast("No tienes permiso para ver las peticiones. Revisa las reglas de Firestore."); });
   } else if (rol === "admin") {
     view = "admin"; renderAdmin();
