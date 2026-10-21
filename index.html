@@ -168,6 +168,19 @@ details.ev[open] .chev{transform:rotate(90deg)}
 details.ev .more{padding:0 16px 16px 92px;display:grid;gap:6px}
 @media (max-width:520px){details.ev .more{padding-left:16px}}
 
+/* Botón flotante de redes */
+.redes{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:35;display:grid;justify-items:end;gap:12px}
+body:has(#install) .redes{bottom:calc(170px + env(safe-area-inset-bottom,0px))}
+body.locked .redes{display:none}
+.redes-btn{width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));box-shadow:0 10px 26px -8px var(--shade),0 0 0 3px rgba(255,255,255,.9);display:grid;place-items:center}
+.redes-btn svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+.redes-btn .ab circle{fill:#fff}
+.redes .ce{display:none}.redes.abierto .ce{display:block}.redes.abierto .ab{display:none}
+.redes-lista{display:grid;gap:10px;justify-items:end;animation:up .2s ease-out}
+.red{display:flex;align-items:center;gap:10px;text-decoration:none}
+.red-txt{background:var(--surface);color:var(--ink);font-weight:800;font-size:14px;padding:6px 12px;border-radius:999px;box-shadow:0 6px 16px -8px var(--shade)}
+.red-ic{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;box-shadow:0 8px 20px -8px var(--shade)}
+.red-ic svg{width:26px;height:26px}
 /* Botones de evento */
 .evtools{margin-top:6px}
 .btn.wa{background:#1f9d55;color:#fff}
@@ -422,7 +435,7 @@ function toast(m, ms=2600){ const t=document.createElement("div"); t.className="
 const app = initializeApp(firebaseConfig);
 const fb = getFirestore(app), auth = getAuth(app);
 
-const DEFAULT = { iglesia:"Iglesia Jesús es el Rey", lema:"Pasión por su Presencia", facebook:"",
+const DEFAULT = { iglesia:"Iglesia Jesús es el Rey", lema:"Pasión por su Presencia", facebook:"", instagram:"", whatsapp:"",
   sinpe:{numero:"",nombre:"",nota:""},
   vivo:{activo:false,url:"",titulo:"Culto dominical"}, zoom:{url:"",titulo:"",fecha:"",hora:"",id:"",clave:""} };
 let D = { cfg: structuredClone(DEFAULT), eventos:[], noticias:[], videos:[], encuestas:[] };
@@ -482,6 +495,28 @@ const ICON = {
   menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   fb:'<svg viewBox="0 0 24 24"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/></svg>'
 };
+const RED_ICON = {
+  facebook:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.8v3h2.6V21h3.1z"/></svg>',
+  instagram:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="#fff" stroke="none"/></svg>',
+  whatsapp:'<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 3a9 9 0 0 0-7.8 13.4L3 21l4.7-1.2A9 9 0 1 0 12 3zm0 16.4c-1.4 0-2.8-.4-4-1.1l-.3-.2-2.8.7.8-2.7-.2-.3A7.4 7.4 0 1 1 12 19.4zm4.1-5.5c-.2-.1-1.3-.7-1.5-.7-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6 6 0 0 1-3-2.6c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.7-1.6c-.2-.4-.4-.4-.5-.4h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.3c.1.2 1.6 2.5 4 3.5 1.5.6 2 .7 2.8.6.4-.1 1.3-.5 1.5-1.1.2-.5.2-1 .1-1.1l-.5-.3z"/></svg>'
+};
+function redesHTML(){
+  const c = D.cfg, redes = [["facebook","Facebook","#1877f2",c.facebook],["instagram","Instagram","linear-gradient(45deg,#f9a825,#e91e63 55%,#7b1fa2)",c.instagram],["whatsapp","Grupo de WhatsApp","#25d366",c.whatsapp]].filter(r => okUrl(r[3]));
+  if (!redes.length) return "";
+  return `<div class="redes" id="redes">
+    <div class="redes-lista" id="redes-lista" hidden>${redes.map(([k,n,col,u]) => `<a class="red" href="${esc(u)}" target="_blank" rel="noopener"><span class="red-txt">${n}</span><span class="red-ic" style="background:${col}">${RED_ICON[k]}</span></a>`).join("")}</div>
+    <button class="redes-btn" id="redes-btn" aria-expanded="false" aria-controls="redes-lista" aria-label="Nuestras redes sociales">
+      <svg class="ab" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.2M8.3 13.2l7.4 4.2"/></svg>
+      <svg class="ce" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button></div>`;
+}
+document.addEventListener("click", e => {
+  const box = document.getElementById("redes"); if (!box) return;
+  const btn = e.target.closest("#redes-btn");
+  const lista = document.getElementById("redes-lista");
+  if (btn) { const abrir = lista.hidden; lista.hidden = !abrir; box.classList.toggle("abierto", abrir); btn.setAttribute("aria-expanded", String(abrir)); return; }
+  if (!e.target.closest("#redes") && !lista.hidden) { lista.hidden = true; box.classList.remove("abierto"); document.getElementById("redes-btn").setAttribute("aria-expanded","false"); }
+});
 function sinpeHTML(){
   const s = D.cfg.sinpe || {};
   if (!s.numero) return `<div class="empty">Pronto publicaremos el número de SINPE Móvil de la iglesia.</div>`;
@@ -544,9 +579,8 @@ function renderPublic(){
       </div>
     </section>
   </main>
-  <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong>
-    ${okUrl(c.facebook)?`<a href="${esc(c.facebook)}" target="_blank" rel="noopener">Síguenos en Facebook</a>`:""}
-    <button class="adminlink" data-act="login">Acceso de administración</button></div></footer>`;
+  <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong></div></footer>
+  ${redesHTML()}`;
   renderPrayerForm();
   fillPhotos($("#eventos"));
 }
@@ -671,7 +705,6 @@ function openPanel(name, fromHistory){
       <button data-panel="videos"><span class="ic">${ICON.video}</span><span><b>Videos</b><small>${D.videos.length ? `${D.videos.length} ${D.videos.length===1?"video":"videos"}` : "Prédicas y alabanzas"}</small></span><span class="arr">›</span></button>
       <button data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><small>Nueva Traducción Viviente</small></span><span class="arr">›</span></button>
       ${s.numero?`<button data-panel="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>Ofrendas y diezmos</small></span><span class="arr">›</span></button>`:""}
-      ${okUrl(D.cfg.facebook)?`<a href="${esc(D.cfg.facebook)}" target="_blank" rel="noopener"><span class="ic">${ICON.fb}</span><span><b>Síguenos en Facebook</b><small>Noticias y transmisiones</small></span><span class="arr">↗</span></a>`:""}
       <button data-panel="gracias"><span class="ic">${ICON.gracias}</span><span><b>Da gracias</b><small>Se mostrará el domingo</small></span><span class="arr">›</span></button>
       ${(D.encuestas||[]).some(e=>e.activa)?`<button data-panel="encuesta"><span class="ic">${ICON.encuesta}</span><span><b>Encuesta</b><small>Ayúdanos a planear actividades</small></span><span class="arr">›</span></button>`:""}
       <button data-panel="buzon"><span class="ic">${ICON.buzon}</span><span><b>Buzón de recomendaciones</b><small>Anónimo</small></span><span class="arr">›</span></button>
@@ -990,16 +1023,18 @@ function renderTab(){
         <div class="field"><label class="label" for="c-ig">Nombre</label><input type="text" id="c-ig" value="${esc(c.iglesia)}"></div>
         <div class="field"><label class="label" for="c-le">Lema</label><input type="text" id="c-le" value="${esc(c.lema)}"></div>
         <div class="field"><label class="label" for="c-fb">Página de Facebook</label><input type="url" id="c-fb" value="${esc(c.facebook)}" placeholder="https://www.facebook.com/..."></div>
+        <div class="field"><label class="label" for="c-ig2">Instagram</label><input type="url" id="c-ig2" value="${esc(c.instagram)}" placeholder="https://www.instagram.com/..."></div>
+        <div class="field"><label class="label" for="c-wa">Grupo de WhatsApp de la iglesia</label><input type="url" id="c-wa" value="${esc(c.whatsapp)}" placeholder="https://chat.whatsapp.com/..."><p class="hint">En WhatsApp: abre el grupo → toca el nombre → “Invitar al grupo mediante enlace” → copia el enlace. Estas tres redes aparecen en el botón flotante de la página.</p></div>
       </div>
       <p class="err" id="c-err" hidden></p>
       <div class="actions"><button class="btn" id="c-save">Guardar cambios</button></div></section>`;
     $("#c-save").addEventListener("click", async () => {
       const g = id => $("#"+id).value.trim();
       const err = m => { const p=$("#c-err"); p.textContent=m; p.hidden=!m; };
-      for (const [id,n] of [["c-fb","Facebook"],["c-vurl","directo"],["c-zurl","Zoom"]]) if (g(id) && !okUrl(g(id))) return err(`El enlace de ${n} debe empezar con https://`);
+      for (const [id,n] of [["c-fb","Facebook"],["c-ig2","Instagram"],["c-wa","WhatsApp"],["c-vurl","directo"],["c-zurl","Zoom"]]) if (g(id) && !okUrl(g(id))) return err(`El enlace de ${n} debe empezar con https://`);
       if ($("#c-on").checked && !okUrl(g("c-vurl"))) return err("Pega el enlace del directo para marcar “en vivo”.");
       if (g("c-sn") && g("c-sn").replace(/\D/g,"").length < 8) return err("El número de SINPE debe tener 8 dígitos.");
-      const data = { iglesia:g("c-ig")||DEFAULT.iglesia, lema:g("c-le"), facebook:g("c-fb"),
+      const data = { iglesia:g("c-ig")||DEFAULT.iglesia, lema:g("c-le"), facebook:g("c-fb"), instagram:g("c-ig2"), whatsapp:g("c-wa"),
         sinpe:{numero:g("c-sn"), nombre:g("c-sname"), nota:g("c-snota")},
         vivo:{activo:$("#c-on").checked, url:g("c-vurl"), titulo:g("c-vt")},
         zoom:{url:g("c-zurl"), titulo:g("c-zt"), fecha:g("c-zf"), hora:g("c-zh"), id:g("c-zid"), clave:g("c-zc")} };
@@ -1230,7 +1265,7 @@ function formSimple(body, cfg){
     if (Date.now() - (ultimoEnvio[cfg.col] || 0) < 20000) return err("Espera unos segundos antes de enviar otro.");
     const b = $("#xsend", body); b.disabled = true; b.textContent = "Enviando…"; err("");
     try { await addDoc(collection(fb, cfg.col), { ...data, fecha: serverTimestamp() }); ultimoEnvio[cfg.col] = Date.now(); body.innerHTML = cfg.listo; }
-    catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled = false; b.textContent = cfg.boton; }
+    catch (x) { console.error(x); err(x?.code === "permission-denied" ? "No se pudo guardar: faltan las reglas nuevas en Firebase. Avísale al administrador." : "No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled = false; b.textContent = cfg.boton; }
   });
 }
 const listoHTML = (t, p) => `<div class="card done" style="padding:26px 20px"><div class="ring" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3>${t}</h3><p>${p}</p></div>`;
@@ -1357,11 +1392,21 @@ async function imagenesGracias(items, start, end){
 function verImagenes(urls, start){
   const nombre = i => `agradecimientos-${start.toISOString().slice(0,10)}${urls.length > 1 ? "-" + (i + 1) : ""}.png`;
   modal(`<h3>Imagen para proyectar</h3>
-    <p class="hint">Descárgala para pasarla a la computadora del proyector, o toca “Pantalla completa” para mostrarla desde este dispositivo.</p>
+    <p class="hint">Descárgala para pasarla a la computadora del proyector, toca “Compartir” para enviarla a Facebook, Instagram o WhatsApp, o toca “Pantalla completa” para mostrarla desde este dispositivo.</p>
     <div style="display:grid;gap:14px">${urls.map((u,i)=>`<div style="display:grid;gap:8px"><img src="${u}" alt="Agradecimientos ${i+1}" style="width:100%;border-radius:12px;border:1px solid var(--line)">
-      <div class="tools"><a class="btn small" href="${u}" download="${nombre(i)}">Descargar${urls.length>1?` ${i+1}`:""}</a><button type="button" class="btn small ghost" data-full="${i}">Pantalla completa</button></div></div>`).join("")}</div>
+      <div class="tools"><a class="btn small" href="${u}" download="${nombre(i)}">Descargar${urls.length>1?` ${i+1}`:""}</a><button type="button" class="btn small wa" data-share="${i}">Compartir</button><button type="button" class="btn small ghost" data-full="${i}">Pantalla completa</button></div></div>`).join("")}</div>
     <div class="actions"><button class="btn ghost" data-close>Cerrar</button></div>`, m => {
     m.querySelectorAll("[data-full]").forEach(b => b.addEventListener("click", () => proyectar(urls, +b.dataset.full)));
+    m.querySelectorAll("[data-share]").forEach(b => b.addEventListener("click", async () => {
+      const i = +b.dataset.share;
+      try {
+        const blob = await (await fetch(urls[i])).blob();
+        const file = new File([blob], nombre(i), { type: "image/png" });
+        const texto = `¡Gracias, Señor! Agradecimientos de nuestra iglesia 🙏 · ${D.cfg.iglesia || DEFAULT.iglesia}`;
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Agradecimientos", text: texto }); }
+        else toast("Este dispositivo no permite compartir imágenes directo. Toca “Descargar” y súbela a Facebook, Instagram o WhatsApp desde tu galería.", 6000);
+      } catch (x) { if (x?.name !== "AbortError") toast("No se pudo compartir. Descárgala y compártela desde tu galería.", 5000); }
+    }));
   });
 }
 function proyectar(urls, i){
