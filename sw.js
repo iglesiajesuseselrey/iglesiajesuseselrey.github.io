@@ -1,5 +1,5 @@
 // Permite instalar la página como app y abrirla aunque la señal sea débil.
-const CACHE = "jeer-v5";
+const CACHE = "jeer-v6";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

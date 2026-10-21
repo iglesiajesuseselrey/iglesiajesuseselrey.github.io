@@ -139,7 +139,8 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 .drawer.menu{width:min(340px,88%)}
 .drawer.open{transform:none}
 .drawer header{background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 14px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
-.drawer header h2{font-size:22px;flex:1;color:#fff;min-width:0}
+.drawer header h2{font-size:21px;flex:1;color:#fff;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drawer header button{flex:none}
 .drawer header button{border:0;background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:8px 14px;font-weight:800;cursor:pointer;white-space:nowrap}
 .drawer .body{overflow:auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:16px;align-content:start;overscroll-behavior:contain}
 .menulist{display:grid;gap:8px}
@@ -167,6 +168,26 @@ details.ev[open] .chev{transform:rotate(90deg)}
 details.ev .more{padding:0 16px 16px 92px;display:grid;gap:6px}
 @media (max-width:520px){details.ev .more{padding-left:16px}}
 
+/* Botones de evento */
+.evtools{margin-top:6px}
+.btn.wa{background:#1f9d55;color:#fff}
+/* Imagen de evento */
+.evimg{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:12px;background:var(--bg);margin-bottom:4px}
+/* Agradecimientos, encuestas */
+.gracias-lista{display:grid;gap:10px}
+.gcard{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.gcard input{width:20px;height:20px;accent-color:var(--accent)}
+.gcard b{display:block;font-size:16px;overflow-wrap:anywhere}
+.gcard small{color:var(--muted)}
+.opciones{display:grid;gap:8px}
+.opcion{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:var(--surface)}
+.opcion input{width:20px;height:20px;accent-color:var(--accent)}
+.opcion:has(input:checked){border-color:var(--accent);background:var(--soft);font-weight:700}
+.barra{display:grid;gap:6px}
+.barra-t{display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.barra-t b{font-variant-numeric:tabular-nums}
+.barra-f{height:12px;border-radius:999px;background:var(--bg);overflow:hidden}
+.barra-f i{display:block;height:100%;background:var(--accent);border-radius:999px}
 /* SINPE */
 .sinpe{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}
 @media (max-width:520px){.sinpe{grid-template-columns:1fr}}
@@ -404,7 +425,7 @@ const fb = getFirestore(app), auth = getAuth(app);
 const DEFAULT = { iglesia:"Iglesia Jesús es el Rey", lema:"Pasión por su Presencia", facebook:"",
   sinpe:{numero:"",nombre:"",nota:""},
   vivo:{activo:false,url:"",titulo:"Culto dominical"}, zoom:{url:"",titulo:"",fecha:"",hora:"",id:"",clave:""} };
-let D = { cfg: structuredClone(DEFAULT), eventos:[], noticias:[], videos:[] };
+let D = { cfg: structuredClone(DEFAULT), eventos:[], noticias:[], videos:[], encuestas:[] };
 let fotoCache = new Map();
 let rol = null, view = "public", adminTab = "ev";
 let cintaIdx = Math.floor(Date.now()/864e5) % CINTA.length;
@@ -419,6 +440,7 @@ async function loadPublic(){
     D.eventos = ev.docs.map(d => ({id:d.id, ...d.data()}));
     D.noticias = no.docs.map(d => ({id:d.id, ...d.data()}));
     D.videos = vi.docs.map(d => ({id:d.id, ...d.data()}));
+    try { D.encuestas = (await getDocs(collection(fb,"encuestas"))).docs.map(d => ({id:d.id, ...d.data()})); } catch { D.encuestas = []; }
   } catch (e) { console.error(e); toast("No se pudo cargar el contenido. Revisa tu conexión."); }
 }
 async function foto(id){
@@ -526,6 +548,7 @@ function renderPublic(){
     ${okUrl(c.facebook)?`<a href="${esc(c.facebook)}" target="_blank" rel="noopener">Síguenos en Facebook</a>`:""}
     <button class="adminlink" data-act="login">Acceso de administración</button></div></footer>`;
   renderPrayerForm();
+  fillPhotos($("#eventos"));
 }
 const DIAS_LARGOS = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"];
 const DIAS_CORTOS = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
@@ -545,11 +568,59 @@ function evPublicHTML(e){
   const hay = e.hora || e.lugar || e.desc;
   return `<details class="ev"><summary>${dateBox(e)}
     <div><h3>${esc(e.titulo)}</h3>${e.repite==="semanal"?`<span class="sub" style="font-size:13px;font-weight:700">${esc(cuandoTexto(e))}</span>`:""}</div><span class="chev" aria-hidden="true">›</span></summary>
-    <div class="more"><div class="info"><span>📅 ${esc(cuandoTexto(e))}</span></div><div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}</div></details>`;
+    <div class="more">${e.imagen?`<img class="evimg" data-foto="${esc(e.imagen)}" alt="Imagen del evento ${esc(e.titulo)}">`:""}<div class="info"><span>📅 ${esc(cuandoTexto(e))}</span></div><div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}
+      <div class="tools evtools"><button type="button" class="btn small" data-cal="${esc(e.id)}">📅 Agregar al calendario</button>${e.repite!=="semanal"&&e.fecha?`<a class="btn small wa" href="${waEvento(e)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>`:""}</div></div></details>`;
+}
+/* ---------- Calendario y WhatsApp ---------- */
+const urlSitio = () => location.origin + location.pathname;
+const pad2 = n => String(n).padStart(2,"0");
+function fechaInicio(e){
+  const base = e.repite === "semanal" ? proxima(e) : e.fecha;
+  const [y,mo,d] = base.split("-").map(Number);
+  const [h,mi] = (e.hora || "00:00").split(":").map(Number);
+  return new Date(y, mo-1, d, h, mi);
+}
+const calStamp = d => `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
+const utc = d => d.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+const calDia = d => `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}`;
+function agregarCalendario(e){
+  const ini = fechaInicio(e), fin = new Date(+ini + 2*3600e3);
+  const conHora = !!e.hora;
+  const nombre = D.cfg.iglesia || DEFAULT.iglesia;
+  const detalles = [e.desc, `${nombre} · ${urlSitio()}`].filter(Boolean).join("\n\n");
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  if (ios) {
+    const escIcs = t => String(t||"").replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+    const finDia = new Date(ini); finDia.setDate(finDia.getDate()+1);
+    const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Iglesia Jesus es el Rey//ES","BEGIN:VEVENT",
+      `UID:${e.id}@iglesiajesuseselrey`, `DTSTAMP:${calStamp(new Date())}`,
+      conHora ? `DTSTART:${utc(ini)}` : `DTSTART;VALUE=DATE:${calDia(ini)}`,
+      conHora ? `DTEND:${utc(fin)}` : `DTEND;VALUE=DATE:${calDia(finDia)}`,
+      ...(e.repite === "semanal" ? ["RRULE:FREQ=WEEKLY"] : []),
+      `SUMMARY:${escIcs(e.titulo)}`, `LOCATION:${escIcs(e.lugar)}`, `DESCRIPTION:${escIcs(detalles)}`,
+      "BEGIN:VALARM","TRIGGER:-PT1H","ACTION:DISPLAY",`DESCRIPTION:${escIcs(e.titulo)}`,"END:VALARM",
+      "END:VEVENT","END:VCALENDAR"].join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([ics], {type:"text/calendar"}));
+    a.download = (e.titulo || "evento").replace(/[^\wáéíóúñ ]+/gi,"").trim().replace(/\s+/g,"-") + ".ics";
+    document.body.append(a); a.click(); a.remove();
+    return;
+  }
+  const finDia = new Date(ini); finDia.setDate(finDia.getDate()+1);
+  const q = new URLSearchParams({ action:"TEMPLATE", text:e.titulo, details:detalles, location:e.lugar || "", ctz:"America/Costa_Rica",
+    dates: conHora ? `${calStamp(ini)}/${calStamp(fin)}` : `${calDia(ini)}/${calDia(finDia)}` });
+  if (e.repite === "semanal") q.set("recur", "RRULE:FREQ=WEEKLY");
+  const a = document.createElement("a"); a.href = "https://calendar.google.com/calendar/render?" + q.toString(); a.target = "_blank"; a.rel = "noopener";
+  document.body.append(a); a.click(); a.remove();
+}
+function waEvento(e){
+  const t = [`📅 *${e.titulo}*`, `🗓️ ${fechaLarga(e.fecha)}${e.hora ? " · " + hora12(e.hora) : ""}`, e.lugar ? `📍 ${e.lugar}` : "", e.desc ? `\n${e.desc}` : "",
+    `\n${D.cfg.iglesia || DEFAULT.iglesia} te invita. Más información: ${urlSitio()}`].filter(Boolean).join("\n");
+  return "https://wa.me/?text=" + encodeURIComponent(t);
 }
 function evHTML(e, admin){
   return `<article class="ev">${dateBox(e)}
-    <div class="body"><h3>${esc(e.titulo)}</h3><div class="info"><span>📅 ${esc(cuandoTexto(e))}</span>${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}</div>
+    <div class="body"><h3>${esc(e.titulo)}</h3>${e.imagen?`<img class="evimg" data-foto="${esc(e.imagen)}" alt="" style="max-width:220px;margin:6px 0">`:""}<div class="info"><span>📅 ${esc(cuandoTexto(e))}</span>${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}</div>
     ${admin?`<div class="tools"><button class="btn small ghost" data-act="ev-edit" data-id="${esc(e.id)}">Editar</button></div>`:""}</article>`;
 }
 function nHTML(n, admin){
@@ -567,7 +638,7 @@ function vHTML(v, admin){
 
 /* ---------------- Paneles laterales ---------------- */
 let drawerEl = null;
-const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV", sinpe:"SINPE Móvil"};
+const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV", sinpe:"SINPE Móvil", gracias:"Agradecimientos", encuesta:"Encuesta", buzon:"Recomendaciones"};
 function openPanel(name, fromHistory){
   if (!PANELES[name]) return;
   const reuse = drawerEl && !drawerEl.closing;
@@ -601,10 +672,19 @@ function openPanel(name, fromHistory){
       <button data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><small>Nueva Traducción Viviente</small></span><span class="arr">›</span></button>
       ${s.numero?`<button data-panel="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>Ofrendas y diezmos</small></span><span class="arr">›</span></button>`:""}
       ${okUrl(D.cfg.facebook)?`<a href="${esc(D.cfg.facebook)}" target="_blank" rel="noopener"><span class="ic">${ICON.fb}</span><span><b>Síguenos en Facebook</b><small>Noticias y transmisiones</small></span><span class="arr">↗</span></a>`:""}
+      <button data-panel="gracias"><span class="ic">${ICON.gracias}</span><span><b>Da gracias</b><small>Se mostrará el domingo</small></span><span class="arr">›</span></button>
+      ${(D.encuestas||[]).some(e=>e.activa)?`<button data-panel="encuesta"><span class="ic">${ICON.encuesta}</span><span><b>Encuesta</b><small>Ayúdanos a planear actividades</small></span><span class="arr">›</span></button>`:""}
+      <button data-panel="buzon"><span class="ic">${ICON.buzon}</span><span><b>Buzón de recomendaciones</b><small>Anónimo</small></span><span class="arr">›</span></button>
       <button data-act="login"><span class="ic">${ICON.llave}</span><span><b>Administración</b><small>Solo para pastores y equipo</small></span><span class="arr">›</span></button>
     </div>`;
   } else if (name === "sinpe") {
     body.innerHTML = sinpeHTML();
+  } else if (name === "gracias") {
+    renderAgradecer(body);
+  } else if (name === "encuesta") {
+    renderEncuesta(body);
+  } else if (name === "buzon") {
+    renderSugerencias(body);
   } else if (name === "fotos") {
     const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
     body.innerHTML = list.length ? `<div class="cards">${list.map(n=>nHTML(n)).join("")}</div>` : `<div class="empty">Pronto compartiremos fotos y noticias de nuestras actividades.</div>`;
@@ -788,8 +868,16 @@ const claveVisto = () => "visto-" + rol;
 function leerVisto(){ try { return +(localStorage.getItem(claveVisto()) || 0); } catch { return 0; } }
 function guardarVisto(t){ try { localStorage.setItem(claveVisto(), String(t)); } catch {} }
 const BANDEJAS = { general: "Para los Pastores", matrimonios: "Matrimonios", jovenes: "Jóvenes" };
+let pastorVista = "pet";
 function renderPastor(){
   const B = BUZON[rol]; if (!B) return;
+  const sw = rol === "pastores" ? `<div class="tabs"><button data-pvista="pet" aria-pressed="${pastorVista==="pet"}">Peticiones de oración</button><button data-pvista="re" aria-pressed="${pastorVista==="re"}">Recomendaciones</button></div>` : "";
+  if (rol === "pastores" && pastorVista === "re") {
+    $("#root").innerHTML = `<div class="adminbar"><div class="wrap"><b>Pastores</b>
+      <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
+      <main class="wrap" style="gap:20px">${sw}<div id="tab"></div></main>`;
+    return tabRecomendaciones($("#tab"));
+  }
   const isOr = r => !!r[B.campo];
   const conBandejas = rol === "pastores";
   const enBandeja = conBandejas ? reqs.filter(r => destDe(r) === rdest) : reqs;
@@ -802,6 +890,7 @@ function renderPastor(){
   <div class="adminbar"><div class="wrap"><b>Peticiones de oración</b>
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:20px">
+    ${sw}
     ${nuevas.length && !avisoCerrado ? `<div class="aviso" role="status"><span class="aviso-ic">🙏</span><div><b>${nuevas.length===1?"1 persona te pidió oración":`${nuevas.length} personas te pidieron oración`}</b><span>desde tu última visita${conBandejas?` · ${["general","matrimonios","jovenes"].map(k=>[k,nuevas.filter(r=>destDe(r)===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${k==="general"?"para ustedes":"de "+BANDEJAS[k]}`).join(", ")}`:""}</span></div><button class="btn small" data-act="aviso-ok">Entendido</button></div>` : ""}
     ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="activar-avisos">Activar avisos</button></div>` : ""}
     <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div></div>
@@ -851,6 +940,9 @@ function renderAdmin(){
       <button data-tab="ev" aria-pressed="${adminTab==="ev"}">Eventos</button>
       <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y noticias</button>
       <button data-tab="vi" aria-pressed="${adminTab==="vi"}">Videos</button>
+      <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
+      <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
+      <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
       <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div id="tab"></div>
@@ -859,6 +951,9 @@ function renderAdmin(){
 }
 function renderTab(){
   const t = $("#tab"); if (!t) return;
+  if (adminTab === "gr") { agrSel = null; return tabAgradecimientos(t); }
+  if (adminTab === "en") return tabEncuestas(t);
+  if (adminTab === "re") return tabRecomendaciones(t);
   if (adminTab === "ev") {
     const list = [...D.eventos].sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
     t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
@@ -949,10 +1044,18 @@ function formEvento(ev){
       <div class="field"><label class="label" for="e-h">Hora</label><input type="time" id="e-h" value="${esc(e.hora)}"></div></div>
     <div class="field"><label class="label" for="e-l">Lugar</label><input type="text" id="e-l" value="${esc(e.lugar)}" placeholder="Ej.: Templo principal"></div>
     <div class="field"><label class="label" for="e-d">Detalles (opcional)</label><textarea id="e-d">${esc(e.desc)}</textarea></div>
+    <div class="field"><span class="label">Imagen (opcional)</span><div class="thumbs" id="e-th"></div>
+      <div class="tools"><label class="btn ghost small" for="e-file">${e.imagen?"Cambiar imagen":"+ Agregar imagen"}</label><input type="file" id="e-file" accept="image/*" hidden>${e.imagen?`<button type="button" class="btn small danger" id="e-quitar">Quitar imagen</button>`:""}</div>
+      <p class="hint">Por ejemplo, el afiche de la actividad. Se ve al tocar el evento.</p></div>
     <p class="err" id="e-err" hidden></p>${ev?delBlock():""}
     <div class="actions">${ev?'<button class="btn danger" data-del style="margin-right:auto">Borrar</button>':""}<button class="btn ghost" data-close>Cancelar</button><button class="btn" id="e-save">Guardar</button></div>`,
   (m, close) => {
-    wireDelete(m, close, async () => { await deleteDoc(doc(fb,"eventos",ev.id)); D.eventos = D.eventos.filter(x=>x.id!==ev.id); });
+    wireDelete(m, close, async () => { await deleteDoc(doc(fb,"eventos",ev.id)); if (ev.imagen) { try { await deleteDoc(doc(fb,"fotos",ev.imagen)); } catch {} } D.eventos = D.eventos.filter(x=>x.id!==ev.id); });
+    let nuevaImg = null, quitarImg = false;
+    const pintar = () => { const th = $("#e-th",m); th.innerHTML = nuevaImg ? `<div><img src="${nuevaImg}" alt=""></div>` : (e.imagen && !quitarImg ? `<div><img data-foto="${esc(e.imagen)}" alt=""></div>` : ""); fillPhotos(th); };
+    pintar();
+    $("#e-file",m).addEventListener("change", async ev3 => { const f = ev3.target.files[0]; ev3.target.value = ""; if (!f) return; try { nuevaImg = await compress(f); quitarImg = false; pintar(); } catch { toast("No se pudo leer la imagen."); } });
+    $("#e-quitar",m)?.addEventListener("click", () => { quitarImg = true; nuevaImg = null; pintar(); });
     m.addEventListener("change", ev2 => { if (ev2.target.name === "rep") { const w = ev2.target.value === "semanal"; $("#f-fecha",m).hidden = w; $("#f-dia",m).hidden = !w; } });
     $("#e-save",m).addEventListener("click", async () => {
       const g = id => $("#"+id,m).value.trim();
@@ -962,7 +1065,11 @@ function formEvento(ev){
         ? {titulo:g("e-t"), repite:"semanal", dia:+g("e-dia"), fecha:"", hora:g("e-h"), lugar:g("e-l"), desc:g("e-d")}
         : {titulo:g("e-t"), repite:"", fecha:g("e-f"), hora:g("e-h"), lugar:g("e-l"), desc:g("e-d")};
       const b = $("#e-save",m); b.disabled = true; b.textContent = "Guardando…";
-      try { const id = await saveItem("eventos", ev?.id, data); D.eventos = [...D.eventos.filter(x=>x.id!==id), {id, ...data}]; close(); toast("Evento guardado"); renderTab(); }
+      try {
+        data.imagen = (e.imagen && !quitarImg && !nuevaImg) ? e.imagen : "";
+        if (nuevaImg) { const r = await addDoc(collection(fb,"fotos"), {data: nuevaImg}); data.imagen = r.id; fotoCache.set(r.id, nuevaImg); }
+        if (e.imagen && data.imagen !== e.imagen) { try { await deleteDoc(doc(fb,"fotos",e.imagen)); } catch {} }
+        const id = await saveItem("eventos", ev?.id, data); D.eventos = [...D.eventos.filter(x=>x.id!==id), {id, ...data}]; close(); toast("Evento guardado"); renderTab(); }
       catch (x) { console.error(x); const p=$("#e-err",m); p.textContent="No se pudo guardar."; p.hidden=false; b.disabled=false; b.textContent="Guardar"; }
     });
   });
@@ -1078,17 +1185,265 @@ async function lightbox(ids, i){
   });
 }
 
+/* ================== AGRADECIMIENTOS · ENCUESTAS · RECOMENDACIONES ================== */
+Object.assign(ICON, {
+  gracias:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>',
+  encuesta:'<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  buzon:'<svg viewBox="0 0 24 24"><path d="M4 7h16v11H4z"/><path d="M4 7l8 6 8-6"/></svg>'
+});
+const MAX_GRACIAS = 30;
+const fmtCorta = d => d.toLocaleDateString("es-CR", { day:"numeric", month:"long" });
+const fmtHora = d => d.toLocaleString("es-CR", { day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
+const msDoc = r => r.fecha?.toMillis ? r.fecha.toMillis() : (r.fecha?.toDate ? +r.fecha.toDate() : 0);
+
+/* Semana de agradecimientos: domingo 11:00 a. m. → domingo siguiente 9:30 a. m. */
+function semanaGracias(offset = 0){
+  const now = new Date();
+  const start = new Date(now); start.setHours(11, 0, 0, 0);
+  start.setDate(start.getDate() - start.getDay());           // domingo de esta semana
+  if (start > now) start.setDate(start.getDate() - 7);        // aún no son las 11 del domingo
+  start.setDate(start.getDate() + 7 * offset);
+  const end = new Date(start); end.setDate(end.getDate() + 7); end.setHours(9, 30, 0, 0);
+  return { start, end };
+}
+
+/* ---------- Paneles públicos ---------- */
+const ultimoEnvio = {};
+function formSimple(body, cfg){
+  body.innerHTML = `${cfg.intro}
+    <form id="xf" class="card" novalidate style="padding:20px">
+      ${cfg.campos}
+      <p class="err" id="xerr" hidden></p>
+      <button class="btn block" id="xsend">${cfg.boton}</button>
+      <p class="privacy">${cfg.nota}</p>
+    </form>`;
+  const f = $("#xf", body);
+  f.querySelectorAll("[data-count]").forEach(inp => {
+    const out = $("#" + inp.dataset.count, body);
+    inp.addEventListener("input", () => out.textContent = inp.value.length);
+  });
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = m => { const p = $("#xerr", body); p.textContent = m; p.hidden = !m; };
+    const data = cfg.leer(f);
+    const msg = cfg.validar(data); if (msg) return err(msg);
+    if (Date.now() - (ultimoEnvio[cfg.col] || 0) < 20000) return err("Espera unos segundos antes de enviar otro.");
+    const b = $("#xsend", body); b.disabled = true; b.textContent = "Enviando…"; err("");
+    try { await addDoc(collection(fb, cfg.col), { ...data, fecha: serverTimestamp() }); ultimoEnvio[cfg.col] = Date.now(); body.innerHTML = cfg.listo; }
+    catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled = false; b.textContent = cfg.boton; }
+  });
+}
+const listoHTML = (t, p) => `<div class="card done" style="padding:26px 20px"><div class="ring" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3>${t}</h3><p>${p}</p></div>`;
+
+function renderAgradecer(body){
+  formSimple(body, {
+    col: "agradecimientos", boton: "Enviar agradecimiento",
+    intro: `<div><h2 style="font-size:26px">Da gracias</h2><p class="sub">¿Por qué estás agradecido con Dios esta semana? El domingo lo compartiremos en la pantalla de la iglesia.</p></div>`,
+    campos: `<div class="field"><label class="label" for="g-t">Tu agradecimiento</label><input type="text" id="g-t" maxlength="${MAX_GRACIAS}" data-count="g-n" placeholder="Ej.: Por la salud de mi mamá"><div class="count"><span id="g-n">0</span> / ${MAX_GRACIAS}</div></div>
+      <div class="field"><label class="label" for="g-nom">Tu nombre o familia (opcional)</label><input type="text" id="g-nom" maxlength="25" placeholder="Ej.: Familia Rojas"></div>`,
+    nota: "Se mostrará en la pantalla el domingo. Si no pones nombre, saldrá sin nombre.",
+    leer: f => ({ texto: $("#g-t", f).value.trim(), nombre: $("#g-nom", f).value.trim() }),
+    validar: d => d.texto.length < 3 ? "Escribe tu agradecimiento." : "",
+    listo: listoHTML("¡Gracias por compartir!", "Tu agradecimiento se mostrará el domingo en la iglesia. “Dad gracias en todo.” (1 Tesalonicenses 5:18)")
+  });
+}
+function renderSugerencias(body){
+  formSimple(body, {
+    col: "recomendaciones", boton: "Enviar recomendación",
+    intro: `<div><h2 style="font-size:26px">Buzón de recomendaciones</h2><p class="sub">Comparte una idea o sugerencia para la iglesia. Es anónimo: no pedimos tu nombre.</p></div>`,
+    campos: `<div class="field"><label class="label" for="s-t">Tu recomendación</label><textarea id="s-t" maxlength="1000" data-count="s-n" placeholder="Escribe aquí tu idea o sugerencia…"></textarea><div class="count"><span id="s-n">0</span> / 1000</div></div>`,
+    nota: "Solo los pastores y la administración pueden leerla.",
+    leer: f => ({ texto: $("#s-t", f).value.trim() }),
+    validar: d => d.texto.length < 3 ? "Escribe tu recomendación." : "",
+    listo: listoHTML("¡Gracias por tu recomendación!", "La recibieron los pastores y la administración. Tu opinión nos ayuda a crecer.")
+  });
+}
+function yaVoto(id){ try { return localStorage.getItem("voto-" + id) === "1"; } catch { return false; } }
+function renderEncuesta(body){
+  const activas = (D.encuestas || []).filter(e => e.activa);
+  if (!activas.length) { body.innerHTML = `<div class="empty">No hay encuestas abiertas en este momento.</div>`; return; }
+  body.innerHTML = activas.map(e => yaVoto(e.id)
+    ? `<div class="card" style="padding:20px;display:grid;gap:8px"><h3 style="margin:0;font-size:19px">${esc(e.pregunta)}</h3><p class="sub" style="margin:0">✓ Ya votaste. ¡Gracias por participar!</p></div>`
+    : `<form class="card encuesta" data-enc="${esc(e.id)}" style="padding:20px;display:grid;gap:14px" novalidate>
+        <h3 style="margin:0;font-size:19px">${esc(e.pregunta)}</h3>
+        <div class="opciones">${(e.opciones||[]).map((o,i)=>`<label class="opcion"><input type="radio" name="op-${esc(e.id)}" value="${i}"><span>${esc(o)}</span></label>`).join("")}</div>
+        <p class="err" hidden></p><button class="btn block">Votar</button></form>`).join("");
+  body.querySelectorAll("form.encuesta").forEach(f => f.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const sel = f.querySelector("input:checked"), err = f.querySelector(".err");
+    if (!sel) { err.textContent = "Elige una opción."; err.hidden = false; return; }
+    const b = f.querySelector("button"); b.disabled = true; b.textContent = "Enviando…";
+    try {
+      await addDoc(collection(fb, "encuestas", f.dataset.enc, "votos"), { opcion: +sel.value, fecha: serverTimestamp() });
+      try { localStorage.setItem("voto-" + f.dataset.enc, "1"); } catch {}
+      toast("¡Gracias por votar!"); renderEncuesta(body);
+    } catch (x) { console.error(x); err.textContent = "No se pudo enviar tu voto. Intenta de nuevo."; err.hidden = false; b.disabled = false; b.textContent = "Votar"; }
+  }));
+}
+
+/* ---------- Admin: agradecimientos e imagen para proyectar ---------- */
+let agrSemana = 0, agrSel = null;
+async function tabAgradecimientos(t){
+  t.innerHTML = `<div class="empty">Cargando agradecimientos…</div>`;
+  let lista = [];
+  try { lista = (await getDocs(collection(fb, "agradecimientos"))).docs.map(d => ({ id: d.id, ...d.data() })); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar. Revisa las reglas de Firestore.</div>`; return; }
+  const { start, end } = semanaGracias(agrSemana);
+  const semana = lista.filter(r => { const m = msDoc(r); return m >= +start && m < +end; }).sort((a,b) => msDoc(a) - msDoc(b));
+  if (!agrSel) agrSel = new Set(semana.map(r => r.id));
+  t.innerHTML = `<section>
+    <div class="head"><div><h2>Agradecimientos</h2><p class="sub">Del domingo ${esc(fmtCorta(start))} (11:00 a. m.) al domingo ${esc(fmtCorta(end))} (9:30 a. m.) · ${semana.length} recibidos</p></div>
+      <div class="tabs"><button data-agr="-1">‹ Semana anterior</button>${agrSemana<0?`<button data-agr="1">Semana siguiente ›</button>`:""}</div></div>
+    ${semana.length ? `<div class="actions" style="justify-content:flex-start"><button class="btn" id="agr-img">Crear imagen para proyectar</button><span class="sub" id="agr-cnt">${[...agrSel].filter(id=>semana.some(r=>r.id===id)).length} seleccionados</span></div>
+      <div class="gracias-lista">${semana.map(r => `<label class="gcard"><input type="checkbox" data-gsel="${esc(r.id)}" ${agrSel.has(r.id)?"checked":""}><span><b>“${esc(r.texto)}”</b><small>${esc(r.nombre||"Sin nombre")} · ${esc(fmtHora(new Date(msDoc(r))))}</small></span><button type="button" class="btn small danger" data-gdel="${esc(r.id)}">Borrar</button></label>`).join("")}</div>`
+      : `<div class="empty">No hay agradecimientos en esta semana.</div>`}
+  </section>`;
+  t.querySelectorAll("[data-agr]").forEach(b => b.addEventListener("click", () => { agrSemana += +b.dataset.agr; agrSel = null; tabAgradecimientos(t); }));
+  t.querySelectorAll("[data-gsel]").forEach(c => c.addEventListener("change", () => { c.checked ? agrSel.add(c.dataset.gsel) : agrSel.delete(c.dataset.gsel); $("#agr-cnt", t).textContent = `${[...agrSel].filter(id=>semana.some(r=>r.id===id)).length} seleccionados`; }));
+  t.querySelectorAll("[data-gdel]").forEach(b => b.addEventListener("click", async ev => {
+    ev.preventDefault();
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "¿Seguro?"; return; }
+    try { await deleteDoc(doc(fb, "agradecimientos", b.dataset.gdel)); agrSel.delete(b.dataset.gdel); toast("Borrado"); tabAgradecimientos(t); } catch { toast("No se pudo borrar."); }
+  }));
+  $("#agr-img", t)?.addEventListener("click", async () => {
+    const elegidos = semana.filter(r => agrSel.has(r.id));
+    if (!elegidos.length) return toast("Selecciona al menos un agradecimiento.");
+    const imgs = await imagenesGracias(elegidos, start, end);
+    verImagenes(imgs, start);
+  });
+}
+
+function cargarImg(src){ return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; }); }
+async function imagenesGracias(items, start, end){
+  try { await document.fonts.load('800 60px "Archivo"'); await document.fonts.load('400 40px "Allura"'); await document.fonts.load('700 30px "Nunito Sans"'); } catch {}
+  const logo = await cargarImg(LOGO);
+  const POR = 12, paginas = [];
+  for (let i = 0; i < items.length; i += POR) paginas.push(items.slice(i, i + POR));
+  const urls = [];
+  for (let p = 0; p < paginas.length; p++) {
+    const W = 1920, H = 1080, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const x = c.getContext("2d");
+    const g = x.createRadialGradient(W * .5, -200, 100, W * .5, 300, 1500); g.addColorStop(0, "#3326d6"); g.addColorStop(.55, "#1a1280"); g.addColorStop(1, "#0b0840");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for (let k = 0; k < 90; k++) { x.fillStyle = `rgba(255,255,255,${.05 + Math.random()*.18})`; x.beginPath(); x.arc(Math.random()*W, Math.random()*H, 1 + Math.random()*2.4, 0, 7); x.fill(); }
+    const lw = 190, lh = lw * logo.height / logo.width; x.drawImage(logo, 90, 58, lw, lh);
+    x.fillStyle = "#fff"; x.textBaseline = "alphabetic";
+    x.font = '900 86px "Archivo", "Arial Black", sans-serif'; x.fillText("¡Gracias, Señor!", 320, 132);
+    x.font = '400 54px "Allura", cursive'; x.fillStyle = "#ffd68c"; x.fillText("Agradecimientos de nuestra iglesia", 324, 196);
+    x.textAlign = "right"; x.font = '700 30px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.75)";
+    x.fillText(`Semana del ${fmtCorta(start)} al ${fmtCorta(end)}`, W - 90, 120);
+    if (paginas.length > 1) x.fillText(`${p + 1} de ${paginas.length}`, W - 90, 162);
+    x.textAlign = "left";
+    const lista = paginas[p], cols = 3, rows = Math.ceil(lista.length / cols);
+    const top = 262, bottom = H - 96, gap = 26, cw = (W - 180 - gap * (cols - 1)) / cols;
+    const ch = Math.min(170, (bottom - top - gap * (rows - 1)) / Math.max(rows, 1));
+    const offY = top + ((bottom - top) - (rows * ch + (rows - 1) * gap)) / 2;
+    lista.forEach((r, i) => {
+      const cx = 90 + (i % cols) * (cw + gap), cy = offY + Math.floor(i / cols) * (ch + gap);
+      x.fillStyle = "rgba(255,255,255,.10)"; x.strokeStyle = "rgba(255,255,255,.22)"; x.lineWidth = 2;
+      x.beginPath(); x.roundRect(cx, cy, cw, ch, 26); x.fill(); x.stroke();
+      x.fillStyle = "#ffd68c"; x.font = '900 70px "Archivo", sans-serif'; x.fillText("“", cx + 24, cy + 70);
+      x.fillStyle = "#fff"; let fs = 40; x.font = `800 ${fs}px "Nunito Sans", sans-serif`;
+      while (x.measureText(r.texto).width > cw - 100 && fs > 26) { fs -= 2; x.font = `800 ${fs}px "Nunito Sans", sans-serif`; }
+      x.fillText(r.texto, cx + 70, cy + ch / 2 + (r.nombre ? 4 : 14));
+      if (r.nombre) { x.font = '600 26px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.72)"; x.fillText("— " + r.nombre, cx + 70, cy + ch / 2 + 48); }
+    });
+    x.font = '700 28px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.7)"; x.textAlign = "center";
+    x.fillText("“Dad gracias en todo, porque esta es la voluntad de Dios.”  1 Tesalonicenses 5:18", W / 2, H - 46);
+    urls.push(await new Promise(ok => c.toBlob(b => ok(URL.createObjectURL(b)), "image/png")));
+  }
+  return urls;
+}
+function verImagenes(urls, start){
+  const nombre = i => `agradecimientos-${start.toISOString().slice(0,10)}${urls.length > 1 ? "-" + (i + 1) : ""}.png`;
+  modal(`<h3>Imagen para proyectar</h3>
+    <p class="hint">Descárgala para pasarla a la computadora del proyector, o toca “Pantalla completa” para mostrarla desde este dispositivo.</p>
+    <div style="display:grid;gap:14px">${urls.map((u,i)=>`<div style="display:grid;gap:8px"><img src="${u}" alt="Agradecimientos ${i+1}" style="width:100%;border-radius:12px;border:1px solid var(--line)">
+      <div class="tools"><a class="btn small" href="${u}" download="${nombre(i)}">Descargar${urls.length>1?` ${i+1}`:""}</a><button type="button" class="btn small ghost" data-full="${i}">Pantalla completa</button></div></div>`).join("")}</div>
+    <div class="actions"><button class="btn ghost" data-close>Cerrar</button></div>`, m => {
+    m.querySelectorAll("[data-full]").forEach(b => b.addEventListener("click", () => proyectar(urls, +b.dataset.full)));
+  });
+}
+function proyectar(urls, i){
+  const d = document.createElement("div"); d.className = "lb"; d.style.background = "#000"; d.style.padding = "0";
+  const show = () => d.innerHTML = `<img src="${urls[i]}" alt="" style="max-height:100vh;max-width:100vw;border-radius:0">${urls.length>1?`<button class="nv prev" aria-label="Anterior">‹</button><button class="nv next" aria-label="Siguiente">›</button>`:""}<button class="x">Salir ✕</button>`;
+  show(); document.body.append(d);
+  d.requestFullscreen?.().catch(() => {});
+  const close = () => { try { document.fullscreenElement && document.exitFullscreen(); } catch {} d.remove(); document.removeEventListener("keydown", key); };
+  const key = e => { if (e.key === "Escape") close(); if (e.key === "ArrowRight") { i = (i + 1) % urls.length; show(); } if (e.key === "ArrowLeft") { i = (i - 1 + urls.length) % urls.length; show(); } };
+  document.addEventListener("keydown", key);
+  d.addEventListener("click", e => { if (e.target.closest(".next")) { i = (i + 1) % urls.length; show(); } else if (e.target.closest(".prev")) { i = (i - 1 + urls.length) % urls.length; show(); } else if (e.target.closest(".x")) close(); });
+}
+
+/* ---------- Admin: encuestas ---------- */
+async function tabEncuestas(t){
+  t.innerHTML = `<div class="empty">Cargando encuestas…</div>`;
+  let encs = [];
+  try { encs = (await getDocs(collection(fb, "encuestas"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => msDoc(b) - msDoc(a)); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar las encuestas.</div>`; return; }
+  const votos = {};
+  await Promise.all(encs.map(async e => {
+    try { votos[e.id] = (await getDocs(collection(fb, "encuestas", e.id, "votos"))).docs.map(d => d.data().opcion); } catch { votos[e.id] = []; }
+  }));
+  t.innerHTML = `<section><div class="head"><div><h2>Encuestas</h2><p class="sub">La gente vota desde el menú. Solo se muestran las encuestas abiertas.</p></div><button class="btn" id="enc-new">+ Nueva encuesta</button></div>
+    ${encs.length ? encs.map(e => { const v = votos[e.id] || [], tot = v.length; return `<div class="panel">
+      <div class="head" style="align-items:center"><h3>${esc(e.pregunta)}</h3><span class="tag" style="${e.activa?"background:var(--ok);color:#fff":""}">${e.activa?"Abierta":"Cerrada"}</span></div>
+      <div style="display:grid;gap:10px">${(e.opciones||[]).map((o,i) => { const n = v.filter(x => x === i).length, pc = tot ? Math.round(n * 100 / tot) : 0; return `<div class="barra"><div class="barra-t"><span>${esc(o)}</span><b>${n} · ${pc}%</b></div><div class="barra-f"><i style="width:${pc}%"></i></div></div>`; }).join("")}</div>
+      <p class="sub" style="margin:0">${tot} ${tot===1?"voto":"votos"} en total</p>
+      <div class="tools"><button class="btn small" data-etog="${esc(e.id)}">${e.activa?"Cerrar encuesta":"Abrir encuesta"}</button><button class="btn small danger" data-edel="${esc(e.id)}">Borrar</button></div></div>`; }).join("")
+    : `<div class="empty">No hay encuestas. Toca “+ Nueva encuesta”.</div>`}</section>`;
+  $("#enc-new", t).addEventListener("click", () => modal(`<h3>Nueva encuesta</h3>
+      <div class="field"><label class="label" for="q-p">Pregunta</label><input type="text" id="q-p" maxlength="120" placeholder="Ej.: ¿Qué actividad te gustaría para noviembre?"></div>
+      <div class="field"><label class="label" for="q-o">Opciones (una por línea)</label><textarea id="q-o" placeholder="Campamento familiar&#10;Noche de alabanza&#10;Paseo a la playa"></textarea><p class="hint">Entre 2 y 8 opciones.</p></div>
+      <p class="err" id="q-err" hidden></p>
+      <div class="actions"><button class="btn ghost" data-close>Cancelar</button><button class="btn" id="q-save">Publicar encuesta</button></div>`, (m, close) => {
+      $("#q-save", m).addEventListener("click", async () => {
+        const p = $("#q-p", m).value.trim(), ops = $("#q-o", m).value.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 8);
+        const err = s => { const e = $("#q-err", m); e.textContent = s; e.hidden = !s; };
+        if (!p) return err("Escribe la pregunta."); if (ops.length < 2) return err("Escribe al menos 2 opciones.");
+        try { await addDoc(collection(fb, "encuestas"), { pregunta: p, opciones: ops, activa: true, fecha: serverTimestamp() }); close(); toast("Encuesta publicada"); await loadPublic(); tabEncuestas(t); }
+        catch (x) { console.error(x); err("No se pudo guardar."); }
+      });
+    }));
+  t.querySelectorAll("[data-etog]").forEach(b => b.addEventListener("click", async () => {
+    const e = encs.find(x => x.id === b.dataset.etog);
+    try { await updateDoc(doc(fb, "encuestas", e.id), { activa: !e.activa }); toast(e.activa ? "Encuesta cerrada" : "Encuesta abierta"); await loadPublic(); tabEncuestas(t); } catch { toast("No se pudo cambiar."); }
+  }));
+  t.querySelectorAll("[data-edel]").forEach(b => b.addEventListener("click", async () => {
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
+    try { await deleteDoc(doc(fb, "encuestas", b.dataset.edel)); toast("Encuesta borrada"); await loadPublic(); tabEncuestas(t); } catch { toast("No se pudo borrar."); }
+  }));
+}
+
+/* ---------- Admin y Pastores: recomendaciones ---------- */
+async function tabRecomendaciones(t){
+  t.innerHTML = `<div class="empty">Cargando recomendaciones…</div>`;
+  let lista = [];
+  try { lista = (await getDocs(collection(fb, "recomendaciones"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => msDoc(b) - msDoc(a)); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar. Revisa las reglas de Firestore.</div>`; return; }
+  t.innerHTML = `<section><div><h2>Buzón de recomendaciones</h2><p class="sub">Son anónimas. Las ven la administración y los Pastores.</p></div>
+    ${lista.length ? lista.map(r => `<article class="req"><div class="meta"><span class="who">Anónimo</span><span>${esc(fmtHora(new Date(msDoc(r))))}</span></div><p>${esc(r.texto)}</p>
+      <div class="tools" style="justify-content:flex-end"><button class="btn small danger" data-sdel="${esc(r.id)}">Borrar</button></div></article>`).join("")
+    : `<div class="empty">Todavía no han llegado recomendaciones.</div>`}</section>`;
+  t.querySelectorAll("[data-sdel]").forEach(b => b.addEventListener("click", async () => {
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
+    try { await deleteDoc(doc(fb, "recomendaciones", b.dataset.sdel)); toast("Borrada"); tabRecomendaciones(t); } catch { toast("No se pudo borrar."); }
+  }));
+}
+
 /* ---------------- Clics ---------------- */
 document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) closeAll(); });
 document.addEventListener("click", async e => {
-  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto],[data-rdest]"); if (!el) return;
+  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto],[data-rdest],[data-pvista],[data-cal]"); if (!el) return;
   if (el.dataset.panel) { openPanel(el.dataset.panel); return; }
+  if (el.dataset.cal) { const ev = D.eventos.find(x => x.id === el.dataset.cal); if (ev) agregarCalendario(ev); return; }
   if (el.dataset.goto) { const id = el.dataset.goto; closeAll(); setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:"smooth"}), 320); return; }
   if (el.dataset.copy !== undefined) { const old = el.textContent; try { await navigator.clipboard.writeText(el.dataset.copy); el.textContent = "Copiado ✓"; } catch { el.textContent = "Cópialo a mano"; } setTimeout(()=>el.textContent=old, 2000); return; }
   if (el.dataset.lb) { const n = D.noticias.find(x=>x.id===el.dataset.lb); if (n) lightbox(n.fotos, +el.dataset.i); return; }
   if (el.dataset.tab) { adminTab = el.dataset.tab; renderAdmin(); return; }
   if (el.dataset.rf) { rfilter = el.dataset.rf; renderPastor(); return; }
   if (el.dataset.rdest) { rdest = el.dataset.rdest; renderPastor(); return; }
+  if (el.dataset.pvista) { pastorVista = el.dataset.pvista; renderPastor(); return; }
   if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; const campo = BUZON[rol]?.campo; if (!campo) return; try { await updateDoc(doc(fb,"peticiones",r.id), {[campo]:!r[campo]}); } catch { toast("No se pudo actualizar."); el.disabled = false; } return; }
   if (el.dataset.delreq) {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = "¿Seguro? Toca otra vez"; setTimeout(()=>{ if (el.isConnected){ el.dataset.sure=""; el.textContent="Borrar"; } }, 4000); return; }
@@ -1115,7 +1470,7 @@ renderPublic();
 await loadPublic();
 renderPublic();
 const startPanel = location.hash.slice(1);
-if (["menu","fotos","videos","biblia","sinpe"].includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
+if (Object.keys(PANELES).includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
 if (startPanel === "admin") loginModal(false);
 onAuthStateChanged(auth, user => {
   const email = (user?.email || "").toLowerCase();
@@ -1124,7 +1479,7 @@ onAuthStateChanged(auth, user => {
   if (user && !rol) { signOut(auth); return; }
   if (BUZON[rol]) {
     const B = BUZON[rol];
-    view = rol; reqs = []; rdest = "general"; avisoCerrado = false; primeraCarga = true;
+    view = rol; reqs = []; rdest = "general"; pastorVista = "pet"; avisoCerrado = false; primeraCarga = true;
     vistoAntes = leerVisto();
     renderPastor();
     const q = B.filtro ? query(collection(fb,"peticiones"), where("destino","==",B.filtro)) : collection(fb,"peticiones");

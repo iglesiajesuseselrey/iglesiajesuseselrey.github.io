@@ -37,6 +37,40 @@ service cloud.firestore {
       allow delete: if isPastores();
     }
 
+    // Agradecimientos: cualquiera envía (máx. 30 caracteres); los leen admin y pastores.
+    match /agradecimientos/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['texto','nombre','fecha'])
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 30
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 25
+        && request.resource.data.fecha == request.time;
+      allow read, delete: if isAdmin() || isPastores();
+    }
+
+    // Buzón de recomendaciones (anónimo): solo lo leen admin y pastores.
+    match /recomendaciones/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['texto','fecha'])
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 1000
+        && request.resource.data.fecha == request.time;
+      allow read, delete: if isAdmin() || isPastores();
+    }
+
+    // Encuestas: todos las ven, el admin las crea. Votos anónimos solo en encuestas abiertas.
+    match /encuestas/{eid} {
+      allow read: if true;
+      allow write: if isAdmin();
+      match /votos/{vid} {
+        allow create: if request.resource.data.keys().hasOnly(['opcion','fecha'])
+          && request.resource.data.opcion is int
+          && request.resource.data.opcion >= 0
+          && request.resource.data.opcion < get(/databases/$(database)/documents/encuestas/$(eid)).data.opciones.size()
+          && get(/databases/$(database)/documents/encuestas/$(eid)).data.activa == true
+          && request.resource.data.fecha == request.time;
+        allow read, delete: if isAdmin() || isPastores();
+      }
+    }
+
     // Cinta bíblica: cualquiera la lee y solo puede avanzarla de uno en uno.
     match /sitio/cinta {
       allow read: if true;
