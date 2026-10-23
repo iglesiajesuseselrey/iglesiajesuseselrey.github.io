@@ -370,13 +370,13 @@ const USUARIOS = {
 /* Permite escribir el usuario con tilde o ñ (ej. "niños", "jóvenes") */
 const usuarioDe = t => USUARIOS[String(t||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")];
 /* A quién va dirigida la petición */
-const DESTINOS = { general: "Pastores", matrimonios: "Pastores de Matrimonios", jovenes: "Pastores de Jóvenes", varones: "Pastores de Varones", mujeres: "Pastores de Mujeres", ninos: "Pastores de Niños" };
+const DESTINOS = { general: "Pastores", matrimonios: "Pastores de Matrimonios", jovenes: "Pastores de Jóvenes", varones: "Pastor de Varones", mujeres: "Pastora de Mujeres", ninos: "Pastores de Niños" };
 /* Configuración de cada buzón de pastores */
 const BUZON = {
   pastores:    { titulo: "Buzón de los Pastores",              campo: "oradoPastores",    filtro: null },
   matrimonios: { titulo: "Buzón de Pastores de Matrimonios",   campo: "oradoMatrimonios", filtro: "matrimonios" },
   jovenes:     { titulo: "Buzón de Pastores de Jóvenes",       campo: "oradoJovenes",     filtro: "jovenes" },
-  varones:     { titulo: "Buzón de Pastores de Varones",       campo: "oradoVarones",     filtro: "varones" },
+  varones:     { titulo: "Buzón del Pastor de Varones",       campo: "oradoVarones",     filtro: "varones" },
   ninos:       { titulo: "Buzón de Pastores de Niños",         campo: "oradoNinos",       filtro: "ninos" }
 };
 /* ===================================================================== */
@@ -935,7 +935,7 @@ function renderPastor(){
     ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="activar-avisos">Activar avisos</button></div>` : ""}
     <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div>${conBandejas?`<button class="btn small" data-act="excel">⬇ Descargar Excel</button>`:""}</div>
     ${conBandejas ? `<div class="tabs bandejas">${Object.entries(BANDEJAS).map(([k,v])=>`<button data-rdest="${k}" aria-pressed="${rdest===k}">${v}${pendDe(k)?`<span class="badge">${pendDe(k)}</span>`:""}</button>`).join("")}</div>
-      ${rdest==="mujeres"?`<p class="hint">Peticiones para los ${esc(DESTINOS[rdest])}. Solo se ven en esta cuenta de Pastores.</p>`:rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para los ${esc(DESTINOS[rdest])}. Ellos también las ven en su buzón.</p>`:""}` : ""}
+      ${rdest==="mujeres"?`<p class="hint">Peticiones para la Pastora de Mujeres. Solo se ven en esta cuenta de Pastores.</p>`:rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para: ${esc(DESTINOS[rdest])}. También las ven en su propio buzón.</p>`:""}` : ""}
     <div class="tabs"><button data-rf="pend" aria-pressed="${rfilter==="pend"}">Por orar${pend?`<span class="badge">${pend}</span>`:""}</button><button data-rf="all" aria-pressed="${rfilter==="all"}">Todas</button></div>
     <div style="display:grid;gap:12px">
     ${rows.length ? rows.map(r => `<article class="req ${isOr(r)?"prayed":""}">
