@@ -363,15 +363,21 @@ const USUARIOS = {
   admin:       { email: "admin@iglesiajesuseselrey.app",       rol: "admin" },
   pastores:    { email: "pastores@iglesiajesuseselrey.app",    rol: "pastores" },
   matrimonios: { email: "matrimonios@iglesiajesuseselrey.app", rol: "matrimonios" },
-  jovenes:     { email: "jovenes@iglesiajesuseselrey.app",     rol: "jovenes" }
+  jovenes:     { email: "jovenes@iglesiajesuseselrey.app",     rol: "jovenes" },
+  varones:     { email: "varones@iglesiajesuseselrey.app",     rol: "varones" },
+  ninos:       { email: "ninos@iglesiajesuseselrey.app",       rol: "ninos" }
 };
+/* Permite escribir el usuario con tilde o ñ (ej. "niños", "jóvenes") */
+const usuarioDe = t => USUARIOS[String(t||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")];
 /* A quién va dirigida la petición */
-const DESTINOS = { general: "Pastores", matrimonios: "Pastores de Matrimonios", jovenes: "Pastores de Jóvenes" };
+const DESTINOS = { general: "Pastores", matrimonios: "Pastores de Matrimonios", jovenes: "Pastores de Jóvenes", varones: "Pastores de Varones", mujeres: "Pastores de Mujeres", ninos: "Pastores de Niños" };
 /* Configuración de cada buzón de pastores */
 const BUZON = {
   pastores:    { titulo: "Buzón de los Pastores",              campo: "oradoPastores",    filtro: null },
   matrimonios: { titulo: "Buzón de Pastores de Matrimonios",   campo: "oradoMatrimonios", filtro: "matrimonios" },
-  jovenes:     { titulo: "Buzón de Pastores de Jóvenes",       campo: "oradoJovenes",     filtro: "jovenes" }
+  jovenes:     { titulo: "Buzón de Pastores de Jóvenes",       campo: "oradoJovenes",     filtro: "jovenes" },
+  varones:     { titulo: "Buzón de Pastores de Varones",       campo: "oradoVarones",     filtro: "varones" },
+  ninos:       { titulo: "Buzón de Pastores de Niños",         campo: "oradoNinos",       filtro: "ninos" }
 };
 /* ===================================================================== */
 
@@ -541,9 +547,10 @@ function renderPublic(){
   <div class="cinta" id="cinta" aria-live="polite"><div class="wrap">${cintaHTML()}</div></div>
   <nav class="nav" aria-label="Secciones"><div class="wrap">
     <button class="menubtn" data-panel="menu" aria-label="Abrir menú">${ICON.menu}Menú</button>
-    <a href="#envivo" class="${live?"live":""}">${live?"● En vivo ahora":"En vivo y Zoom"}</a>
+    <a href="#envivo" class="${live?"live":""}">${live?"● En vivo ahora":"En vivo"}</a>
     <a href="#eventos">Eventos</a>
     <a href="#oracion">Oración</a>
+    <button data-panel="gracias">Da gracias</button>
   </div></nav>
   <main class="wrap">
     <section id="envivo">
@@ -857,9 +864,9 @@ const authMsg = code => ({
 
 function loginModal(first=false){
   modal(`<h3>${first?"Crear contraseña":"Acceso de administración"}</h3>
-    ${first?`<p class="hint">Se hace una sola vez por usuario. Usuarios: <b>admin</b>, <b>pastores</b>, <b>matrimonios</b> o <b>jovenes</b>. Elige una contraseña de al menos 8 caracteres.</p>`:""}
+    ${first?`<p class="hint">Se hace una sola vez por usuario. Usuarios: <b>admin</b>, <b>pastores</b>, <b>matrimonios</b>, <b>jovenes</b>, <b>varones</b> o <b>ninos</b>. Elige una contraseña de al menos 8 caracteres.</p>`:""}
     <form id="lf" novalidate style="gap:14px">
-      <div class="field"><label class="label" for="l-u">Usuario</label><input type="text" id="l-u" autocomplete="username" autocapitalize="none" placeholder="admin, pastores, matrimonios o jovenes"></div>
+      <div class="field"><label class="label" for="l-u">Usuario</label><input type="text" id="l-u" autocomplete="username" autocapitalize="none" placeholder="Ej.: pastores"></div>
       <div class="field"><label class="label" for="l-p">Contraseña</label><input type="password" id="l-p" autocomplete="${first?"new-password":"current-password"}"></div>
       ${first?`<div class="field"><label class="label" for="l-p2">Repite la contraseña</label><input type="password" id="l-p2" autocomplete="new-password"></div>`:""}
       <label class="check" style="font-weight:600;font-size:14px"><input type="checkbox" id="l-show" style="accent-color:var(--accent)"> Mostrar contraseña</label>
@@ -875,7 +882,7 @@ function loginModal(first=false){
     $("#lf", m).addEventListener("submit", async e => {
       e.preventDefault();
       const err = t => { const p=$("#l-err",m); p.textContent=t; p.hidden=!t; };
-      const u = USUARIOS[$("#l-u",m).value.trim().toLowerCase()], p = $("#l-p",m).value;
+      const u = usuarioDe($("#l-u",m).value), p = $("#l-p",m).value;
       if (!u) return err("Usuario o contraseña incorrectos.");
       if (first) {
         if (p.length < 8) return err("La contraseña debe tener al menos 8 caracteres.");
@@ -900,7 +907,7 @@ const destDe = r => r.destino || "general";
 const claveVisto = () => "visto-" + rol;
 function leerVisto(){ try { return +(localStorage.getItem(claveVisto()) || 0); } catch { return 0; } }
 function guardarVisto(t){ try { localStorage.setItem(claveVisto(), String(t)); } catch {} }
-const BANDEJAS = { general: "Para los Pastores", matrimonios: "Matrimonios", jovenes: "Jóvenes" };
+const BANDEJAS = { general: "Para los Pastores", mujeres: "Mujeres", matrimonios: "Matrimonios", jovenes: "Jóvenes", varones: "Varones", ninos: "Niños" };
 let pastorVista = "pet";
 function renderPastor(){
   const B = BUZON[rol]; if (!B) return;
@@ -924,11 +931,11 @@ function renderPastor(){
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:20px">
     ${sw}
-    ${nuevas.length && !avisoCerrado ? `<div class="aviso" role="status"><span class="aviso-ic">🙏</span><div><b>${nuevas.length===1?"1 persona te pidió oración":`${nuevas.length} personas te pidieron oración`}</b><span>desde tu última visita${conBandejas?` · ${["general","matrimonios","jovenes"].map(k=>[k,nuevas.filter(r=>destDe(r)===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${k==="general"?"para ustedes":"de "+BANDEJAS[k]}`).join(", ")}`:""}</span></div><button class="btn small" data-act="aviso-ok">Entendido</button></div>` : ""}
+    ${nuevas.length && !avisoCerrado ? `<div class="aviso" role="status"><span class="aviso-ic">🙏</span><div><b>${nuevas.length===1?"1 persona te pidió oración":`${nuevas.length} personas te pidieron oración`}</b><span>desde tu última visita${conBandejas?` · ${Object.keys(BANDEJAS).map(k=>[k,nuevas.filter(r=>destDe(r)===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${k==="general"?"para ustedes":"de "+BANDEJAS[k]}`).join(", ")}`:""}</span></div><button class="btn small" data-act="aviso-ok">Entendido</button></div>` : ""}
     ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="activar-avisos">Activar avisos</button></div>` : ""}
-    <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div></div>
+    <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div>${conBandejas?`<button class="btn small" data-act="excel">⬇ Descargar Excel</button>`:""}</div>
     ${conBandejas ? `<div class="tabs bandejas">${Object.entries(BANDEJAS).map(([k,v])=>`<button data-rdest="${k}" aria-pressed="${rdest===k}">${v}${pendDe(k)?`<span class="badge">${pendDe(k)}</span>`:""}</button>`).join("")}</div>
-      ${rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para los ${esc(DESTINOS[rdest])}. Ellos también las ven en su buzón.</p>`:""}` : ""}
+      ${rdest==="mujeres"?`<p class="hint">Peticiones para los ${esc(DESTINOS[rdest])}. Solo se ven en esta cuenta de Pastores.</p>`:rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para los ${esc(DESTINOS[rdest])}. Ellos también las ven en su buzón.</p>`:""}` : ""}
     <div class="tabs"><button data-rf="pend" aria-pressed="${rfilter==="pend"}">Por orar${pend?`<span class="badge">${pend}</span>`:""}</button><button data-rf="all" aria-pressed="${rfilter==="all"}">Todas</button></div>
     <div style="display:grid;gap:12px">
     ${rows.length ? rows.map(r => `<article class="req ${isOr(r)?"prayed":""}">
@@ -943,6 +950,57 @@ function renderPastor(){
     : `<div class="empty">${enBandeja.length?"No hay peticiones pendientes aquí. Gracias por orar.":"Todavía no han llegado peticiones aquí."}</div>`}
     </div>
   </main>`;
+}
+/* ---------- Excel de peticiones (.xlsx hecho a mano, sin librerías) ---------- */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const [name, text] of files) {
+    const nb = enc.encode(name), data = enc.encode(text), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+    h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true); h.setUint16(26,nb.length,true);
+    parts.push(new Uint8Array(h.buffer), nb, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true);
+    c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true); c.setUint16(28,nb.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer), nb);
+    off += 30 + nb.length + data.length;
+  }
+  const csize = central.reduce((s,x) => s + x.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,csize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function xlsx(nombreHoja, filas, anchos){
+  const x = v => String(v ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  const col = i => String.fromCharCode(65 + i);
+  const rows = filas.map((f,ri) => `<row r="${ri+1}">${f.map((v,ci) => `<c r="${col(ci)}${ri+1}" t="inlineStr"${ri===0?' s="1"':' s="2"'}><is><t xml:space="preserve">${x(v)}</t></is></c>`).join("")}</row>`).join("");
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${anchos.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join("")}</cols><sheetData>${rows}</sheetData><autoFilter ref="A1:${col(anchos.length-1)}${filas.length}"/></worksheet>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2C20C4"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/><xf applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf></cellXfs></styleSheet>`;
+  return zipStore([
+    ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`],
+    ["_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ["xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${x(nombreHoja)}" sheetId="1" r:id="rId1"/></sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ["xl/worksheets/sheet1.xml", sheet],
+    ["xl/styles.xml", styles]
+  ]);
+}
+function descargarExcel(){
+  if (!reqs.length) return toast("Todavía no hay peticiones para descargar.");
+  const B = BUZON[rol];
+  const filas = [["Fecha", "Nombre", "Teléfono", "Para", "Motivo", "Petición", "Orado"]];
+  reqs.forEach(r => {
+    const f = new Date(msDe(r));
+    filas.push([f.toLocaleString("es-CR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"numeric", minute:"2-digit" }),
+      r.anonimo ? "Anónimo" : (r.nombre || ""), r.contactar && r.telefono ? r.telefono : "", DESTINOS[destDe(r)] || "", r.tema || "", r.texto || "", r[B.campo] ? "Sí" : "No"]);
+  });
+  const blob = xlsx("Peticiones", filas, [20, 22, 14, 24, 18, 60, 8]);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `peticiones-${hoyISO()}.xlsx`; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast("Excel descargado");
 }
 async function avisar(r){
   const titulo = "Nueva petición de oración";
@@ -1226,7 +1284,7 @@ Object.assign(ICON, {
   encuesta:'<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
   buzon:'<svg viewBox="0 0 24 24"><path d="M4 7h16v11H4z"/><path d="M4 7l8 6 8-6"/></svg>'
 });
-const MAX_GRACIAS = 30;
+const MAX_GRACIAS = 50;
 const fmtCorta = d => d.toLocaleDateString("es-CR", { day:"numeric", month:"long" });
 const fmtHora = d => d.toLocaleString("es-CR", { day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
 const msDoc = r => r.fecha?.toMillis ? r.fecha.toMillis() : (r.fecha?.toDate ? +r.fecha.toDate() : 0);
@@ -1323,12 +1381,16 @@ async function tabAgradecimientos(t){
   let lista = [];
   try { lista = (await getDocs(collection(fb, "agradecimientos"))).docs.map(d => ({ id: d.id, ...d.data() })); }
   catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar. Revisa las reglas de Firestore.</div>`; return; }
+  const limite = +semanaGracias(-1).start;
+  const viejos = lista.filter(r => msDoc(r) && msDoc(r) < limite);
+  if (viejos.length) { await Promise.all(viejos.map(r => deleteDoc(doc(fb, "agradecimientos", r.id)).catch(() => {}))); lista = lista.filter(r => !viejos.includes(r)); }
+  if (agrSemana < -1) agrSemana = -1;
   const { start, end } = semanaGracias(agrSemana);
   const semana = lista.filter(r => { const m = msDoc(r); return m >= +start && m < +end; }).sort((a,b) => msDoc(a) - msDoc(b));
   if (!agrSel) agrSel = new Set(semana.map(r => r.id));
   t.innerHTML = `<section>
-    <div class="head"><div><h2>Agradecimientos</h2><p class="sub">Del domingo ${esc(fmtCorta(start))} (11:00 a. m.) al domingo ${esc(fmtCorta(end))} (9:30 a. m.) · ${semana.length} recibidos</p></div>
-      <div class="tabs"><button data-agr="-1">‹ Semana anterior</button>${agrSemana<0?`<button data-agr="1">Semana siguiente ›</button>`:""}</div></div>
+    <div class="head"><div><h2>Agradecimientos</h2><p class="sub">Del domingo ${esc(fmtCorta(start))} (11:00 a. m.) al domingo ${esc(fmtCorta(end))} (9:30 a. m.) · ${semana.length} recibidos<br>Se guardan esta semana y la anterior. Las más viejas se borran solas.</p></div>
+      <div class="tabs">${agrSemana===0?`<button data-agr="-1">‹ Semana anterior</button>`:`<button data-agr="1">Semana actual ›</button>`}</div></div>
     ${semana.length ? `<div class="actions" style="justify-content:flex-start"><button class="btn" id="agr-img">Crear imagen para proyectar</button><span class="sub" id="agr-cnt">${[...agrSel].filter(id=>semana.some(r=>r.id===id)).length} seleccionados</span></div>
       <div class="gracias-lista">${semana.map(r => `<label class="gcard"><input type="checkbox" data-gsel="${esc(r.id)}" ${agrSel.has(r.id)?"checked":""}><span><b>“${esc(r.texto)}”</b><small>${esc(r.nombre||"Sin nombre")} · ${esc(fmtHora(new Date(msDoc(r))))}</small></span><button type="button" class="btn small danger" data-gdel="${esc(r.id)}">Borrar</button></label>`).join("")}</div>`
       : `<div class="empty">No hay agradecimientos en esta semana.</div>`}
@@ -1378,10 +1440,20 @@ async function imagenesGracias(items, start, end){
       x.fillStyle = "rgba(255,255,255,.10)"; x.strokeStyle = "rgba(255,255,255,.22)"; x.lineWidth = 2;
       x.beginPath(); x.roundRect(cx, cy, cw, ch, 26); x.fill(); x.stroke();
       x.fillStyle = "#ffd68c"; x.font = '900 70px "Archivo", sans-serif'; x.fillText("“", cx + 24, cy + 70);
-      x.fillStyle = "#fff"; let fs = 40; x.font = `800 ${fs}px "Nunito Sans", sans-serif`;
-      while (x.measureText(r.texto).width > cw - 100 && fs > 26) { fs -= 2; x.font = `800 ${fs}px "Nunito Sans", sans-serif`; }
-      x.fillText(r.texto, cx + 70, cy + ch / 2 + (r.nombre ? 4 : 14));
-      if (r.nombre) { x.font = '600 26px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.72)"; x.fillText("— " + r.nombre, cx + 70, cy + ch / 2 + 48); }
+      x.fillStyle = "#fff";
+      const maxW = cw - 96, fnt = n => `800 ${n}px "Nunito Sans", sans-serif`;
+      let fs = 40, lineas = [r.texto]; x.font = fnt(fs);
+      while (x.measureText(r.texto).width > maxW && fs > 34) { fs -= 2; x.font = fnt(fs); }
+      if (x.measureText(r.texto).width > maxW) {
+        const partir = () => { const pal = r.texto.split(" "); const out = [""]; for (const w of pal) { const t = (out[out.length-1] + " " + w).trim(); if (x.measureText(t).width <= maxW || !out[out.length-1]) out[out.length-1] = t; else out.push(w); } return out; };
+        fs = 34; x.font = fnt(fs); lineas = partir();
+        while (lineas.length > 2 && fs > 24) { fs -= 2; x.font = fnt(fs); lineas = partir(); }
+        if (lineas.length > 2) lineas = [lineas[0], lineas.slice(1).join(" ")];
+      }
+      const lh = fs * 1.18, bloque = lineas.length * lh + (r.nombre ? 40 : 0);
+      let ty = cy + (ch - bloque) / 2 + fs * 0.9;
+      lineas.forEach(l => { x.fillText(l, cx + 70, ty); ty += lh; });
+      if (r.nombre) { x.font = '600 26px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.72)"; x.fillText("— " + r.nombre, cx + 70, ty + 8); }
     });
     x.font = '700 28px "Nunito Sans", sans-serif'; x.fillStyle = "rgba(255,255,255,.7)"; x.textAlign = "center";
     x.fillText("“Dad gracias en todo, porque esta es la voluntad de Dios.”  1 Tesalonicenses 5:18", W / 2, H - 46);
@@ -1500,6 +1572,7 @@ document.addEventListener("click", async e => {
   if (a==="logout") { if (BUZON[rol]) guardarVisto(Date.now()); try { navigator.clearAppBadge?.(); } catch {} await signOut(auth); return; }
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
   if (a==="otra") return renderPrayerForm(false);
+  if (a==="excel") return descargarExcel();
   if (a==="aviso-ok") { avisoCerrado = true; guardarVisto(Date.now()); renderPastor(); return; }
   if (a==="activar-avisos") { try { const p = await Notification.requestPermission(); toast(p === "granted" ? "Avisos activados" : "No se activaron los avisos. Puedes activarlos en los permisos del sitio."); } catch { toast("Este navegador no permite avisos."); } renderPastor(); return; }
   if (a==="ev-new") return formEvento();

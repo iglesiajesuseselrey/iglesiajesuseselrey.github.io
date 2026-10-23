@@ -9,19 +9,21 @@ service cloud.firestore {
     function isPastores()    { return es('pastores@iglesiajesuseselrey.app'); }
     function isMatrimonios() { return es('matrimonios@iglesiajesuseselrey.app'); }
     function isJovenes()     { return es('jovenes@iglesiajesuseselrey.app'); }
+    function isVarones()     { return es('varones@iglesiajesuseselrey.app'); }
+    function isNinos()       { return es('ninos@iglesiajesuseselrey.app'); }
     function soloCambia(campo) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([campo]);
     }
 
     // Peticiones: cualquiera puede ENVIAR.
-    // pastores ve todas; matrimonios y jovenes solo las dirigidas a ellos; admin no ve ninguna.
+    // pastores ve todas (incluye Mujeres); matrimonios, jovenes, varones y ninos solo las dirigidas a ellos; admin no ve ninguna.
     match /peticiones/{id} {
       allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','destino','tema','texto','fecha'])
         && request.resource.data.anonimo is bool
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
         && request.resource.data.contactar is bool
         && request.resource.data.telefono is string && request.resource.data.telefono.size() <= 20
-        && request.resource.data.destino in ['general','matrimonios','jovenes']
+        && request.resource.data.destino in ['general','matrimonios','jovenes','varones','mujeres','ninos']
         && request.resource.data.tema is string && request.resource.data.tema.size() <= 40
         && request.resource.data.texto is string
         && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 1200
@@ -30,18 +32,22 @@ service cloud.firestore {
             || (request.resource.data.nombre == '' && request.resource.data.contactar == false && request.resource.data.telefono == ''));
       allow read: if isPastores()
         || (isMatrimonios() && resource.data.destino == 'matrimonios')
-        || (isJovenes() && resource.data.destino == 'jovenes');
+        || (isJovenes() && resource.data.destino == 'jovenes')
+        || (isVarones() && resource.data.destino == 'varones')
+        || (isNinos() && resource.data.destino == 'ninos');
       allow update: if (isPastores() && soloCambia('oradoPastores'))
         || (isMatrimonios() && resource.data.destino == 'matrimonios' && soloCambia('oradoMatrimonios'))
-        || (isJovenes() && resource.data.destino == 'jovenes' && soloCambia('oradoJovenes'));
+        || (isJovenes() && resource.data.destino == 'jovenes' && soloCambia('oradoJovenes'))
+        || (isVarones() && resource.data.destino == 'varones' && soloCambia('oradoVarones'))
+        || (isNinos() && resource.data.destino == 'ninos' && soloCambia('oradoNinos'));
       allow delete: if isPastores();
     }
 
-    // Agradecimientos: cualquiera envía (máx. 30 caracteres); los leen admin y pastores.
+    // Agradecimientos: cualquiera envía (máx. 50 caracteres); los leen admin y pastores.
     match /agradecimientos/{id} {
       allow create: if request.resource.data.keys().hasOnly(['texto','nombre','fecha'])
         && request.resource.data.texto is string
-        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 30
+        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 50
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 25
         && request.resource.data.fecha == request.time;
       allow read, delete: if isAdmin() || isPastores();
