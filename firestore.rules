@@ -18,11 +18,12 @@ service cloud.firestore {
     // Peticiones: cualquiera puede ENVIAR.
     // pastores ve todas (incluye Mujeres); matrimonios, jovenes, varones y ninos solo las dirigidas a ellos; admin no ve ninguna.
     match /peticiones/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','destino','tema','texto','fecha'])
+      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','medio','destino','tema','texto','fecha'])
         && request.resource.data.anonimo is bool
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
         && request.resource.data.contactar is bool
         && request.resource.data.telefono is string && request.resource.data.telefono.size() <= 20
+        && (!('medio' in request.resource.data) || request.resource.data.medio in ['','llamada','whatsapp'])
         && request.resource.data.destino in ['general','matrimonios','jovenes','varones','mujeres','ninos']
         && request.resource.data.tema is string && request.resource.data.tema.size() <= 40
         && request.resource.data.texto is string

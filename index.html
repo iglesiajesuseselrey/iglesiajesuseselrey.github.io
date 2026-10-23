@@ -799,7 +799,12 @@ function renderPrayerForm(done){
           <input type="radio" name="contacto" id="c-si" value="si"><label for="c-si"><b>Sí</b><span>Necesito ayuda</span></label>
           <input type="radio" name="contacto" id="c-no" value="no" checked><label for="c-no"><b>No</b><span>Solo la petición</span></label>
         </div></div>
-      <div class="field" id="telf" hidden><label class="label" for="p-tel">Número de celular</label><input type="text" id="p-tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej.: 8888 7777"><p class="hint">Un pastor te escribirá o llamará a este número.</p></div>
+      <div class="field" id="telf" hidden><label class="label" for="p-tel">Número de celular</label><input type="text" id="p-tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej.: 8888 7777"></div>
+        <div class="field"><span class="label">¿Cómo prefieres que te contactemos?</span>
+          <div class="seg" role="radiogroup" aria-label="Medio de contacto">
+            <input type="radio" name="medio" id="md-ll" value="llamada"><label for="md-ll"><b>📞 Llamada</b><span>Al celular</span></label>
+            <input type="radio" name="medio" id="md-wa" value="whatsapp"><label for="md-wa"><b>💬 WhatsApp</b><span>Por mensaje</span></label>
+          </div></div></div>
     </div>
     <div class="field"><span class="label">¿Quién quieres que ore por ti?</span><div class="chips">
       ${Object.entries(DESTINOS).map(([k,v],i)=>`<input type="radio" name="destino" id="d${i}" value="${k}" ${k==="general"?"checked":""}><label for="d${i}">${v}</label>`).join("")}
@@ -827,13 +832,15 @@ function renderPrayerForm(done){
     const destino = f.querySelector("input[name=destino]:checked").value;
     const contactar = !anon && f.querySelector("input[name=contacto]:checked").value === "si";
     const telefono = contactar ? $("#p-tel").value.trim() : "";
+    const medio = contactar ? (f.querySelector("input[name=medio]:checked")?.value || "") : "";
     if (!anon && !nombre) return err("Escribe tu nombre, o elige “Anónima”.");
     if (contactar && telefono.replace(/\D/g,"").length < 8) return err("Escribe tu número de celular (8 dígitos) para que podamos contactarte.");
+    if (contactar && !medio) return err("Elige si prefieres que te llamemos o que te escribamos por WhatsApp.");
     if (texto.length < 3) return err("Escribe tu petición antes de enviarla.");
     if (Date.now() - lastSent < 20000) return err("Espera unos segundos antes de enviar otra petición.");
     const b = $("#psend"); b.disabled = true; b.textContent = "Enviando…"; err("");
     try {
-      await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, destino, tema, texto, fecha:serverTimestamp() });
+      await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, medio, destino, tema, texto, fecha:serverTimestamp() });
       lastSent = Date.now(); lastContact = contactar;
       await avanzarCinta();
       renderPrayerForm(true);
@@ -940,7 +947,7 @@ function renderPastor(){
     <div style="display:grid;gap:12px">
     ${rows.length ? rows.map(r => `<article class="req ${isOr(r)?"prayed":""}">
       <div class="meta"><span class="who">${esc(r.anonimo?"Anónimo":(r.nombre||"Sin nombre"))}</span>${msDe(r) > vistoAntes ? `<span class="tag nueva">Nueva</span>` : ""}<span class="tag">${esc(r.tema||"Otro")}</span><span>${r.fecha?.toDate?esc(r.fecha.toDate().toLocaleString("es-CR",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})):""}</span></div>
-      ${r.contactar&&r.telefono?`<div class="kv"><div><span>📞 Quiere ser contactado</span><b>${esc(r.telefono)}</b></div></div>
+      ${r.contactar&&r.telefono?`<div class="kv"><div><span>${r.medio==="whatsapp"?"💬 Quiere que le escriban por WhatsApp":r.medio==="llamada"?"📞 Quiere que lo llamen":"📞 Quiere ser contactado"}</span><b>${esc(r.telefono)}</b></div></div>
         <div class="tools"><a class="btn small" href="https://wa.me/${waNum(r.telefono)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn small ghost" href="tel:${tel8(r.telefono)}">Llamar</a></div>`:""}
       <p>${esc(r.texto)}</p>
       <div class="tools" style="justify-content:flex-end">
@@ -990,13 +997,13 @@ function xlsx(nombreHoja, filas, anchos){
 function descargarExcel(){
   if (!reqs.length) return toast("Todavía no hay peticiones para descargar.");
   const B = BUZON[rol];
-  const filas = [["Fecha", "Nombre", "Teléfono", "Para", "Motivo", "Petición", "Orado"]];
+  const filas = [["Fecha", "Nombre", "Teléfono", "Contactar por", "Para", "Motivo", "Petición", "Orado"]];
   reqs.forEach(r => {
     const f = new Date(msDe(r));
     filas.push([f.toLocaleString("es-CR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"numeric", minute:"2-digit" }),
-      r.anonimo ? "Anónimo" : (r.nombre || ""), r.contactar && r.telefono ? r.telefono : "", DESTINOS[destDe(r)] || "", r.tema || "", r.texto || "", r[B.campo] ? "Sí" : "No"]);
+      r.anonimo ? "Anónimo" : (r.nombre || ""), r.contactar && r.telefono ? r.telefono : "", r.contactar ? ({llamada:"Llamada", whatsapp:"WhatsApp"}[r.medio] || "") : "", DESTINOS[destDe(r)] || "", r.tema || "", r.texto || "", r[B.campo] ? "Sí" : "No"]);
   });
-  const blob = xlsx("Peticiones", filas, [20, 22, 14, 24, 18, 60, 8]);
+  const blob = xlsx("Peticiones", filas, [20, 22, 14, 14, 24, 18, 60, 8]);
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
   a.download = `peticiones-${hoyISO()}.xlsx`; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
