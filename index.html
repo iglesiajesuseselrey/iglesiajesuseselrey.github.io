@@ -307,6 +307,18 @@ footer .wrap{display:grid;gap:8px;justify-items:center}
 .install b{display:block;font-size:15px}
 .install p{margin:2px 0 0;font-size:13px;color:var(--muted)}
 .install .tools{grid-column:1/-1;justify-content:flex-end}
+.avisos-m{display:grid;gap:16px}
+.avisos-m .sheet-head{display:flex;justify-content:space-between;align-items:center}
+.avisos-m .sheet-head h3{margin:0}
+.avisos-m .x{width:36px;height:36px;border-radius:50%;border:1px solid currentColor;background:none;font-size:20px;line-height:1;cursor:pointer;color:inherit;opacity:.7}
+.avisos-m section{display:grid;gap:10px;padding-top:12px;border-top:1px solid rgba(127,127,127,.25)}
+.avisos-m h4{margin:0;font-size:16px}
+.avisos-m p{margin:0;line-height:1.45}
+.avisos-m .ok-t{color:#2f7a4a}
+.avisos-m .tema{display:flex;gap:8px;align-items:center}
+.avisos-m code{flex:1;min-width:0;overflow-wrap:anywhere;padding:9px 10px;border-radius:10px;background:rgba(127,127,127,.12);font-size:13.5px}
+.aviso-ios{background:#fff6dc;border:1px solid #e9c56a;border-radius:12px;padding:10px 12px;color:#5a4410}
+.aviso-ios ol{margin:6px 0 0 18px;padding:0;display:grid;gap:5px;font-size:14px;line-height:1.4}
 </style>
 <script>
 /* Aviso para instalar la app en el celular */
@@ -531,9 +543,39 @@ function sinpeHTML(){
       <div style="display:grid;gap:8px">${s.nombre?`<p>A nombre de <span class="who2">${esc(s.nombre)}</span></p>`:""}${s.nota?`<p>${esc(s.nota)}</p>`:""}
       <div><button class="btn small" data-copy="${esc(String(s.numero).replace(/\D/g,""))}">Copiar número</button></div></div></div>`;
 }
+/* El directo de Facebook se apaga solo los domingos a las 12:10 p. m. (hora de Costa Rica) */
+function corteDirecto(ahora = Date.now()){
+  const cr = new Date(ahora - 6*3600e3);
+  const dom = Date.UTC(cr.getUTCFullYear(), cr.getUTCMonth(), cr.getUTCDate() - cr.getUTCDay(), 12, 10);
+  let corte = dom + 6*3600e3;
+  if (corte > ahora) corte -= 7*24*3600e3;
+  return corte;
+}
+const proximoCorte = () => corteDirecto() + 7*24*3600e3;
+const directoVencido = v => !!(v && v.activo && (+v.desde || 0) < corteDirecto());
+let timerDirecto = null;
+function programarCorte(){
+  clearTimeout(timerDirecto);
+  const falta = proximoCorte() - Date.now();
+  if (falta > 0 && falta < 8*24*3600e3) timerDirecto = setTimeout(() => {
+    if (view === "public") renderPublic(); else if (view === "admin") apagarDirectoVencido();
+    programarCorte();
+  }, falta + 1000);
+}
+async function apagarDirectoVencido(){
+  const v = D.cfg.vivo || {};
+  if (rol !== "admin" || !directoVencido(v)) return;
+  const vivo = { activo:false, url:"", titulo: v.titulo || "Culto dominical", desde:0 };
+  try {
+    await setDoc(doc(fb,"sitio","config"), { ...D.cfg, vivo });
+    D.cfg.vivo = vivo;
+    if (view === "admin" && adminTab === "cfg") renderTab();
+    toast("El directo se apagó solo (domingo 12:10 p. m.)");
+  } catch (x) { console.error(x); }
+}
 function renderPublic(){
   const c = D.cfg, z = c.zoom || {}, v = c.vivo || {};
-  const live = v.activo && okUrl(v.url);
+  const live = v.activo && okUrl(v.url) && !directoVencido(v);
   const hoy = hoyISO();
   const eventos = D.eventos.filter(e => e.repite === "semanal" || (e.fecha||"") >= hoy).sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
   document.title = c.iglesia || DEFAULT.iglesia;
@@ -842,6 +884,9 @@ function renderPrayerForm(done){
     try {
       await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, medio, destino, tema, texto, fecha:serverTimestamp() });
       lastSent = Date.now(); lastContact = contactar;
+      const avisoTxt = `Para: ${DESTINOS[destino] || "Pastores"} · Motivo: ${tema || "Otro"}${contactar ? " · Pide que lo contacten" : ""}`;
+      ntfyEnviar("pastores", "🙏 Nueva petición de oración", avisoTxt, ["pray"]);
+      if (["matrimonios", "jovenes", "varones", "ninos"].includes(destino)) ntfyEnviar(destino, "🙏 Nueva petición de oración", avisoTxt, ["pray"]);
       await avanzarCinta();
       renderPrayerForm(true);
     } catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled=false; b.textContent="Enviar petición"; }
@@ -868,6 +913,63 @@ const authMsg = code => ({
   "auth/weak-password":"La contraseña es muy débil.",
   "auth/network-request-failed":"Sin conexión. Revisa tu internet."
 }[code] || "No se pudo ingresar. Intenta de nuevo.");
+
+/* ---------------- Avisos: notificaciones del navegador + ntfy (app cerrada) ---------------- */
+// Canales privados de ntfy por cuenta. No compartir: quien tenga el nombre recibe los avisos.
+const NTFY = {
+  pastores:    "jeer-pastores-8b2ug9qzl8",
+  matrimonios: "jeer-matrimonios-rfsg4y0rnr",
+  jovenes:     "jeer-jovenes-hybq350vmy",
+  varones:     "jeer-varones-lrll12b6il",
+  ninos:       "jeer-ninos-ub5h0a7nse",
+  admin:       "jeer-admin-3p0qeu9e67"
+};
+const esIPhone = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const appInstalada = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const versionIOS = () => { const m = navigator.userAgent.match(/OS (\d+)_(\d+)/); return m ? +m[1] + +m[2] / 100 : 0; };
+const USAR_NTFY = false;  // avisos por la app ntfy desactivados: solo notificaciones del navegador
+function ntfyEnviar(cuenta, titulo, mensaje, tags){
+  const tema = NTFY[cuenta]; if (!tema || !USAR_NTFY) return;
+  try { fetch("https://ntfy.sh/", { method:"POST", body: JSON.stringify({ topic: tema, title: titulo, message: mensaje, tags: tags || [], click: location.href.split("#")[0] }) }).catch(() => {}); } catch {}
+}
+function avisoIphoneHTML(){
+  if (!esIPhone) return "";
+  const v = versionIOS(), pasos = [];
+  if (v && v < 16.04) pasos.push(`Tu iPhone tiene iOS ${Math.floor(v)}. Las notificaciones necesitan <b>iOS 16.4 o más reciente</b> (Ajustes → General → Actualización de software).`);
+  if (!appInstalada()) pasos.push(`Instala la app: en Safari toca <b>Compartir</b> y luego <b>Agregar a inicio</b>. Ábrela siempre desde el ícono.`);
+  pasos.push(`Revisa <b>Ajustes → Notificaciones → ${esc(D?.cfg?.iglesia || "la app de la iglesia")}</b>: activa <b>Permitir notificaciones</b>, <b>Sonidos</b> y <b>Pantalla bloqueada</b>.`);
+  pasos.push(`Desactiva <b>No molestar</b> o los <b>Modos de concentración</b> si no te suenan.`);
+  return `<div class="aviso-ios" role="note"><b>⚠️ En iPhone</b><ol>${pasos.map(x => `<li>${x}</li>`).join("")}</ol></div>`;
+}
+function estadoNotifHTML(){
+  if (!("Notification" in window)) return esIPhone ? `<p>Para recibir avisos en este iPhone sigue estos pasos:</p>${avisoIphoneHTML()}` : `<p>Este navegador no permite notificaciones. Abre la página en Chrome (Android) o instala la app (iPhone).</p>`;
+  const p = Notification.permission;
+  if (p === "granted") return `<p class="ok-t">✓ <b>Activadas en este celular.</b> Te avisamos cuando llegue algo nuevo con la página o la app abierta (o minimizada).</p>${avisoIphoneHTML()}<button class="btn small ghost" data-av="prueba">Enviar notificación de prueba</button>`;
+  if (p === "denied") return `<p>🔕 <b>Bloqueadas.</b> Para activarlas, entra a los ajustes del navegador o de la app, busca <b>Notificaciones</b> y permite las de esta página.</p>${avisoIphoneHTML()}`;
+  return `<p>Recibe una notificación cada vez que llegue una petición nueva.</p>${avisoIphoneHTML()}<button class="btn" data-av="activar">Activar notificaciones</button>`;
+}
+function avisosModal(){
+  const cuenta = rol === "admin" ? "admin" : rol;
+  const que = cuenta === "admin" ? "recomendaciones y agradecimientos nuevos" : cuenta === "pastores" ? "todas las peticiones nuevas y las recomendaciones" : "las peticiones dirigidas a tu grupo";
+  modal(`<div class="avisos-m">
+    <div class="sheet-head"><h3>🔔 Avisos</h3><button class="x" data-close aria-label="Cerrar">×</button></div>
+    <section><h4>En este celular</h4><div id="av-estado">${estadoNotifHTML()}</div></section>
+    <p class="hint">Los avisos llegan mientras la página o la app esté abierta o minimizada. Si la cierras por completo, revisa las peticiones al abrirla.</p>
+  </div>`, (m, close) => {
+    m.addEventListener("click", async e => {
+      const b = e.target.closest("[data-av]"); if (!b) return;
+      const a = b.dataset.av;
+      if (a === "activar") { try { const r = await Notification.requestPermission(); if (r === "granted") mostrarNotif("Avisos activados", "Así te van a llegar las peticiones nuevas."); } catch {} $("#av-estado", m).innerHTML = estadoNotifHTML(); }
+      if (a === "prueba") { mostrarNotif("Prueba de aviso", "Si ves esto, las notificaciones funcionan ✓"); toast("Notificación enviada"); }
+      if (a === "copiar") { const t = NTFY[cuenta]; try { await navigator.clipboard.writeText(t); toast("Tema copiado"); } catch { prompt("Copia el tema:", t); } }
+      if (a === "ntfy") { ntfyEnviar(cuenta, "Prueba de aviso", "Si ves esto, los avisos de ntfy funcionan ✓", ["white_check_mark"]); toast("Aviso enviado. Revisa ntfy."); }
+    });
+  });
+}
+async function mostrarNotif(titulo, cuerpo){
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  try { const reg = await navigator.serviceWorker?.getRegistration?.(); if (reg) return reg.showNotification(titulo, { body: cuerpo, icon: "icon-192.png", badge: "icon-192.png" }); new Notification(titulo, { body: cuerpo, icon: "icon-192.png" }); } catch {}
+}
 
 function loginModal(first=false){
   modal(`<h3>${first?"Crear contraseña":"Acceso de administración"}</h3>
@@ -921,7 +1023,7 @@ function renderPastor(){
   const sw = rol === "pastores" ? `<div class="tabs"><button data-pvista="pet" aria-pressed="${pastorVista==="pet"}">Peticiones de oración</button><button data-pvista="re" aria-pressed="${pastorVista==="re"}">Recomendaciones</button></div>` : "";
   if (rol === "pastores" && pastorVista === "re") {
     $("#root").innerHTML = `<div class="adminbar"><div class="wrap"><b>Pastores</b>
-      <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
+      <div class="tools"><button class="btn small" data-act="avisos">🔔 Avisos</button><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
       <main class="wrap" style="gap:20px">${sw}<div id="tab"></div></main>`;
     return tabRecomendaciones($("#tab"));
   }
@@ -935,11 +1037,11 @@ function renderPastor(){
   const permiso = ("Notification" in window) ? Notification.permission : "no";
   $("#root").innerHTML = `
   <div class="adminbar"><div class="wrap"><b>Peticiones de oración</b>
-    <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
+    <div class="tools"><button class="btn small" data-act="avisos">🔔 Avisos</button><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:20px">
     ${sw}
     ${nuevas.length && !avisoCerrado ? `<div class="aviso" role="status"><span class="aviso-ic">🙏</span><div><b>${nuevas.length===1?"1 persona te pidió oración":`${nuevas.length} personas te pidieron oración`}</b><span>desde tu última visita${conBandejas?` · ${Object.keys(BANDEJAS).map(k=>[k,nuevas.filter(r=>destDe(r)===k).length]).filter(x=>x[1]).map(([k,n])=>`${n} ${k==="general"?"para ustedes":"de "+BANDEJAS[k]}`).join(", ")}`:""}</span></div><button class="btn small" data-act="aviso-ok">Entendido</button></div>` : ""}
-    ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="activar-avisos">Activar avisos</button></div>` : ""}
+    ${permiso === "default" ? `<div class="aviso suave"><span class="aviso-ic">🔔</span><div><b>Recibe un aviso cuando llegue una petición</b><span>Funciona mientras tengas la página o la app abierta.</span></div><button class="btn small" data-act="avisos">Activar avisos</button></div>` : ""}
     <div class="head"><div><h2>${B.titulo}</h2><p class="sub">${pend} por orar · ${enBandeja.length} en total${B.filtro?` · Solo las dirigidas a ${esc(DESTINOS[B.filtro])}`:""}</p></div>${conBandejas?`<button class="btn small" data-act="excel">⬇ Descargar Excel</button>`:""}</div>
     ${conBandejas ? `<div class="tabs bandejas">${Object.entries(BANDEJAS).map(([k,v])=>`<button data-rdest="${k}" aria-pressed="${rdest===k}">${v}${pendDe(k)?`<span class="badge">${pendDe(k)}</span>`:""}</button>`).join("")}</div>
       ${rdest==="mujeres"?`<p class="hint">Peticiones para la Pastora de Mujeres. Solo se ven en esta cuenta de Pastores.</p>`:rdest!=="general"?`<p class="hint">Estas peticiones las escribieron para: ${esc(DESTINOS[rdest])}. También las ven en su propio buzón.</p>`:""}` : ""}
@@ -1069,8 +1171,9 @@ function renderTab(){
     const c = D.cfg, v = c.vivo||{}, z = c.zoom||{};
     t.innerHTML = `<section><h2>Directo, Zoom, SINPE y datos</h2>
       <div class="panel"><h3>Transmisión en vivo</h3>
-        <label class="check"><input type="checkbox" id="c-on" ${v.activo?"checked":""}> Estamos en vivo ahora</label>
-        <div class="field"><label class="label" for="c-vurl">Enlace del directo de Facebook</label><input type="url" id="c-vurl" value="${esc(v.url)}" placeholder="https://www.facebook.com/.../videos/..."></div>
+        <label class="check"><input type="checkbox" id="c-on" ${v.activo&&!directoVencido(v)?"checked":""}> Estamos en vivo ahora</label>
+        <p class="hint">Los domingos a las 12:10 p. m. el directo se apaga solo y se borra el enlace.</p>
+        <div class="field"><label class="label" for="c-vurl">Enlace del directo de Facebook</label><input type="url" id="c-vurl" value="${esc(directoVencido(v)?"":v.url)}" placeholder="https://www.facebook.com/.../videos/..."></div>
         <div class="field"><label class="label" for="c-vt">Nombre de la transmisión</label><input type="text" id="c-vt" value="${esc(v.titulo)}"></div>
       </div>
       <div class="panel"><h3>Reunión de Zoom</h3>
@@ -1101,7 +1204,7 @@ function renderTab(){
       if (g("c-sn") && g("c-sn").replace(/\D/g,"").length < 8) return err("El número de SINPE debe tener 8 dígitos.");
       const data = { iglesia:g("c-ig")||DEFAULT.iglesia, lema:g("c-le"), facebook:g("c-fb"), instagram:g("c-ig2"), whatsapp:g("c-wa"),
         sinpe:{numero:g("c-sn"), nombre:g("c-sname"), nota:g("c-snota")},
-        vivo:{activo:$("#c-on").checked, url:g("c-vurl"), titulo:g("c-vt")},
+        vivo:{activo:$("#c-on").checked, url:$("#c-on").checked ? g("c-vurl") : "", titulo:g("c-vt"), desde: $("#c-on").checked ? ((D.cfg.vivo?.activo && !directoVencido(D.cfg.vivo) && D.cfg.vivo.url === g("c-vurl")) ? (+D.cfg.vivo.desde || Date.now()) : Date.now()) : 0},
         zoom:{url:g("c-zurl"), titulo:g("c-zt"), fecha:g("c-zf"), hora:g("c-zh"), id:g("c-zid"), clave:g("c-zc")} };
       const b = $("#c-save"); b.disabled = true; b.textContent = "Guardando…";
       try { await setDoc(doc(fb,"sitio","config"), data); D.cfg = {...structuredClone(DEFAULT), ...data}; toast("Cambios guardados"); err(""); }
@@ -1329,7 +1432,9 @@ function formSimple(body, cfg){
     const msg = cfg.validar(data); if (msg) return err(msg);
     if (Date.now() - (ultimoEnvio[cfg.col] || 0) < 20000) return err("Espera unos segundos antes de enviar otro.");
     const b = $("#xsend", body); b.disabled = true; b.textContent = "Enviando…"; err("");
-    try { await addDoc(collection(fb, cfg.col), { ...data, fecha: serverTimestamp() }); ultimoEnvio[cfg.col] = Date.now(); body.innerHTML = cfg.listo; }
+    try { await addDoc(collection(fb, cfg.col), { ...data, fecha: serverTimestamp() }); ultimoEnvio[cfg.col] = Date.now(); body.innerHTML = cfg.listo;
+      if (cfg.col === "recomendaciones") { ntfyEnviar("admin", "💡 Nueva recomendación", "Alguien dejó una recomendación en el buzón.", ["bulb"]); ntfyEnviar("pastores", "💡 Nueva recomendación", "Alguien dejó una recomendación en el buzón.", ["bulb"]); }
+      if (cfg.col === "agradecimientos") ntfyEnviar("admin", "💛 Nuevo agradecimiento", "Llegó un agradecimiento para la imagen del domingo.", ["yellow_heart"]); }
     catch (x) { console.error(x); err(x?.code === "permission-denied" ? "No se pudo guardar: faltan las reglas nuevas en Firebase. Avísale al administrador." : "No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled = false; b.textContent = cfg.boton; }
   });
 }
@@ -1580,6 +1685,7 @@ document.addEventListener("click", async e => {
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
   if (a==="otra") return renderPrayerForm(false);
   if (a==="excel") return descargarExcel();
+  if (a==="avisos") return avisosModal();
   if (a==="aviso-ok") { avisoCerrado = true; guardarVisto(Date.now()); renderPastor(); return; }
   if (a==="activar-avisos") { try { const p = await Notification.requestPermission(); toast(p === "granted" ? "Avisos activados" : "No se activaron los avisos. Puedes activarlos en los permisos del sitio."); } catch { toast("Este navegador no permite avisos."); } renderPastor(); return; }
   if (a==="ev-new") return formEvento();
@@ -1594,6 +1700,7 @@ document.addEventListener("click", async e => {
 renderPublic();
 await loadPublic();
 renderPublic();
+programarCorte();
 const startPanel = location.hash.slice(1);
 if (Object.keys(PANELES).includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
 if (startPanel === "admin") loginModal(false);
@@ -1619,7 +1726,7 @@ onAuthStateChanged(auth, user => {
       },
       err => { console.error(err); toast("No tienes permiso para ver las peticiones. Revisa las reglas de Firestore."); });
   } else if (rol === "admin") {
-    view = "admin"; renderAdmin();
+    view = "admin"; renderAdmin(); apagarDirectoVencido();
   } else if (view !== "public") {
     view = "public"; renderPublic();
   }
