@@ -172,6 +172,9 @@ details.ev .more{padding:0 16px 16px 92px;display:grid;gap:6px}
 .redes{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:35;display:grid;justify-items:end;gap:12px}
 body:has(#install) .redes{bottom:calc(170px + env(safe-area-inset-bottom,0px))}
 body.locked .redes{display:none}
+/* Que el botón de redes no tape el pie de página: se deja espacio libre debajo del último texto */
+body:has(.redes) footer{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+body:has(#install):has(.redes) footer{padding-bottom:calc(250px + env(safe-area-inset-bottom,0px))}
 .redes-btn{width:60px;height:60px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));box-shadow:0 10px 26px -8px var(--shade),0 0 0 3px rgba(255,255,255,.9);display:grid;place-items:center}
 .redes-btn svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
 .redes-btn .ab circle{fill:#fff}
