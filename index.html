@@ -253,6 +253,11 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 
 
 footer{border-top:1px solid var(--line);padding-block:28px;text-align:center;color:var(--muted);font-size:14px}
 footer .wrap{display:grid;gap:8px;justify-items:center}
+footer .creditos{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 20px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:13px}
+footer .creditos a{color:var(--accent);text-decoration:none;font-weight:600}
+footer .creditos a:hover{text-decoration:underline}
+footer .creditos a b{font-weight:800}
+@media (max-width:640px){footer .creditos{flex-direction:column;justify-content:center}}
 .adminlink{border:0;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline}
 
 .adminbar{position:sticky;top:0;z-index:25;background:var(--hero1);color:#fff;padding-top:env(safe-area-inset-top,0px)}
@@ -628,7 +633,9 @@ function renderPublic(){
       </div>
     </section>
   </main>
-  <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong></div></footer>
+  <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong></div>
+    <div class="wrap creditos"><span>© ${new Date().getFullYear()} ${esc(c.iglesia)} · Todos los derechos reservados</span>
+      <a href="https://rbmsolutionscr.com" target="_blank" rel="noopener">Elaborado por <b>RBM Solutions CR</b> · rbmsolutionscr.com</a></div></footer>
   ${redesHTML()}`;
   renderPrayerForm();
   fillPhotos($("#eventos"));
