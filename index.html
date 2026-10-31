@@ -783,7 +783,7 @@ function openPanel(name, fromHistory){
       <button data-panel="gracias"><span class="ic">${ICON.gracias}</span><span><b>Da gracias</b><small>Se mostrará el domingo</small></span><span class="arr">›</span></button>
       ${(D.encuestas||[]).some(e=>e.activa)?`<button data-panel="encuesta"><span class="ic">${ICON.encuesta}</span><span><b>Encuesta</b><small>Ayúdanos a planear actividades</small></span><span class="arr">›</span></button>`:""}
       <button data-panel="buzon"><span class="ic">${ICON.buzon}</span><span><b>Buzón de recomendaciones</b><small>Anónimo</small></span><span class="arr">›</span></button>
-      <button data-act="login"><span class="ic">${ICON.llave}</span><span><b>Administración</b><small>Solo para pastores y equipo</small></span><span class="arr">›</span></button>
+      <button data-act="login"><span class="ic">${ICON.llave}</span><span><b>Administración</b><small>${rol?"Sesión iniciada · Entrar al panel":"Solo para pastores y equipo"}</small></span><span class="arr">›</span></button>
     </div>`;
   } else if (name === "sinpe") {
     body.innerHTML = sinpeHTML();
@@ -1730,7 +1730,9 @@ programarCorte();
 const startPanel = location.hash.slice(1);
 if (Object.keys(PANELES).includes(startPanel)) { history.replaceState(null, "", location.pathname); openPanel(startPanel); }
 if (startPanel === "admin") loginModal(false);
+let authInicial = true; // al abrir la app se queda en la página principal aunque haya sesión iniciada
 onAuthStateChanged(auth, user => {
+  const irAlPanel = !authInicial; authInicial = false;
   const email = (user?.email || "").toLowerCase();
   rol = Object.values(USUARIOS).find(u => u.email === email)?.rol || null;
   if (unsubReqs) { unsubReqs(); unsubReqs = null; }
@@ -1739,7 +1741,7 @@ onAuthStateChanged(auth, user => {
     const B = BUZON[rol];
     view = rol; reqs = []; rdest = "general"; pastorVista = "pet"; avisoCerrado = false; primeraCarga = true;
     vistoAntes = leerVisto();
-    renderPastor();
+    if (irAlPanel) renderPastor(); else view = "public";
     const q = B.filtro ? query(collection(fb,"peticiones"), where("destino","==",B.filtro)) : collection(fb,"peticiones");
     unsubReqs = onSnapshot(q,
       snap => {
@@ -1752,7 +1754,8 @@ onAuthStateChanged(auth, user => {
       },
       err => { console.error(err); toast("No tienes permiso para ver las peticiones. Revisa las reglas de Firestore."); });
   } else if (rol === "admin") {
-    view = "admin"; renderAdmin(); apagarDirectoVencido();
+    if (irAlPanel) { view = "admin"; renderAdmin(); }
+    apagarDirectoVencido();
   } else if (view !== "public") {
     view = "public"; renderPublic();
   }
