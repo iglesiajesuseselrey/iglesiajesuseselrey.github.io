@@ -91,6 +91,10 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .ccard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:12px;align-content:start;min-width:0}
 .ccard h3{margin:0;font-size:19px;font-weight:800}
+.mapa{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--surface);display:grid}
+.mapa iframe{display:block;width:100%;height:300px;border:0}
+.mapa .tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
+.btn.waze{background:#33ccff;color:#05222e}
 .ccard p{margin:0;color:var(--muted)}
 .ccard.on{border-color:var(--live);box-shadow:0 0 0 3px color-mix(in srgb,var(--live) 15%,transparent)}
 .pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:3px 10px;width:max-content}
@@ -600,6 +604,7 @@ function renderPublic(){
     <a href="#envivo" class="${live?"live":""}">${live?"● En vivo ahora":"En vivo"}</a>
     <a href="#eventos">Eventos</a>
     <a href="#oracion">Oración</a>
+    <a href="#ubicacion">Ubicación</a>
     <button data-panel="gracias">Da gracias</button>
   </div></nav>
   <main class="wrap">
@@ -635,6 +640,16 @@ function renderPublic(){
         <div class="card" id="pcard"></div>
       </div>
     </section>
+    <section id="ubicacion">
+      <div><h2>Ubicación</h2><p class="sub">Te esperamos. Toca un botón para llegar con Google Maps o Waze.</p></div>
+      <div class="mapa">
+        <iframe src="https://maps.google.com/maps?q=${UBICACION.lat},${UBICACION.lng}&z=17&output=embed" title="Mapa de la ubicación de la iglesia" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <div class="tools">
+          <a class="btn" href="https://www.google.com/maps/search/?api=1&query=${UBICACION.lat},${UBICACION.lng}" target="_blank" rel="noopener">📍 Google Maps</a>
+          <a class="btn waze" href="https://waze.com/ul?ll=${UBICACION.lat},${UBICACION.lng}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a>
+        </div>
+      </div>
+    </section>
   </main>
   <footer><div class="wrap"><strong style="color:var(--ink)">${esc(c.iglesia)}</strong></div>
     <div class="wrap creditos"><span>© ${new Date().getFullYear()} ${esc(c.iglesia)} · Todos los derechos reservados</span>
@@ -643,6 +658,7 @@ function renderPublic(){
   renderPrayerForm();
   fillPhotos($("#eventos"));
 }
+const UBICACION = {lat:"9.990710", lng:"-84.041760"};
 const DIAS_LARGOS = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"];
 const DIAS_CORTOS = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
 function proxima(e){
