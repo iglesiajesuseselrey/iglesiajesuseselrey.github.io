@@ -136,6 +136,15 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 .play{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;margin:0 auto}
 .poster small{display:block;margin-top:8px;font-weight:700;text-align:center}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
+.vids{display:grid;gap:3px;background:var(--line)}
+.vid{position:relative;aspect-ratio:16/9;background:#000}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vidlink{font-size:13px;font-weight:700;color:var(--muted)}
+.vlist{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:6px;margin:0 0 8px;padding:0;list-style:none}
+.vlist li{min-width:0;overflow:hidden;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.vlist li span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vlist li button{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--muted)}
+.vadd{display:flex;gap:8px}.vadd input{flex:1;min-width:0}
 
 .drawer-bg{position:fixed;inset:0;z-index:40;background:var(--shade);opacity:0;transition:opacity .25s}
 .drawer-bg.open{opacity:1}
@@ -379,7 +388,7 @@ const firebaseConfig = {
   appId: "1:1095762950405:web:e379f796c9cdcc79ca1f6c"
 };
 /* Usuarios de administración (deben coincidir con las reglas de Firestore).
-   admin:        edita eventos, fotos, videos, directo, Zoom y SINPE; no ve peticiones.
+   admin:        edita eventos, fotos y videos de actividades, directo, Zoom y SINPE; no ve peticiones.
    pastores:     ve TODAS las peticiones.
    matrimonios:  ve solo las peticiones dirigidas a los Pastores de Matrimonios.
    jovenes:      ve solo las peticiones dirigidas a los Pastores de Jóvenes. */
@@ -741,22 +750,41 @@ function evHTML(e, admin){
     <div class="body"><h3>${esc(e.titulo)}</h3>${e.imagen?`<img class="evimg" data-foto="${esc(e.imagen)}" alt="" style="max-width:220px;margin:6px 0">`:""}<div class="info"><span>📅 ${esc(cuandoTexto(e))}</span>${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}</div>
     ${admin?`<div class="tools"><button class="btn small ghost" data-act="ev-edit" data-id="${esc(e.id)}">Editar</button></div>`:""}</article>`;
 }
+/* Las publicaciones de "Fotos y actividades": noticias (con fotos, videos y texto)
+   y los videos que se habían subido antes en la sección "Videos". */
+function publicaciones(){
+  const viejos = D.videos.map(v => ({id:v.id, titulo:v.titulo, fecha:v.fecha, texto:"", fotos:[], videos:v.url?[v.url]:[], _video:true}));
+  return [...D.noticias, ...viejos].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+}
+function ytId(u){
+  try { const x = new URL(u), h = x.hostname.replace(/^(www|m)\./,"");
+    if (h === "youtu.be") return x.pathname.slice(1).split("/")[0];
+    if (/youtube\.com$/.test(h)) { if (x.searchParams.get("v")) return x.searchParams.get("v"); const m = x.pathname.match(/\/(shorts|embed|live)\/([\w-]+)/); if (m) return m[2]; }
+  } catch {} return "";
+}
+function embedUrl(u){
+  const y = ytId(u); if (y) return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(y);
+  if (fuente(u) === "Facebook") return "https://www.facebook.com/plugins/video.php?show_text=false&href=" + encodeURIComponent(u);
+  return "";
+}
+function videoHTML(u){
+  const e = embedUrl(u);
+  if (!e) return `<a class="poster" href="${esc(u)}" target="_blank" rel="noopener"><div><div class="play"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#3524c4"/></svg></div><small>Ver en ${esc(fuente(u))}</small></div></a>`;
+  return `<div class="vid"><iframe src="${esc(e)}" title="Video" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+}
 function nHTML(n, admin){
-  const f = n.fotos||[], shown = f.slice(0,4);
+  const f = n.fotos||[], shown = f.slice(0,4), vids = (n.videos||[]).filter(okUrl);
   return `<article class="post">
+    ${vids.length?`<div class="vids">${vids.map(videoHTML).join("")}</div>`:""}
     ${f.length?`<div class="gallery ${f.length===1?"n1":""}">${shown.map((id,i)=>`<button data-lb="${esc(n.id)}" data-i="${i}" aria-label="Ver foto ${i+1}"><img data-foto="${esc(id)}" alt="">${i===3&&f.length>4?`<span class="more">+${f.length-4}</span>`:""}</button>`).join("")}</div>`:""}
     <div class="txt">${n.fecha?`<time>${esc(fechaLarga(n.fecha))}</time>`:""}<h3>${esc(n.titulo)}</h3>${n.texto?`<p>${esc(n.texto)}</p>`:""}
-    ${admin?`<div class="tools"><button class="btn small ghost" data-act="no-edit" data-id="${esc(n.id)}">Editar</button></div>`:""}</div></article>`;
-}
-function vHTML(v, admin){
-  return `<article class="post"><a class="poster" href="${esc(v.url)}" target="_blank" rel="noopener"><div><div class="play"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#3524c4"/></svg></div><small>Ver en ${esc(fuente(v.url))}</small></div></a>
-    <div class="txt"><h3 style="font-size:18px">${esc(v.titulo)}</h3>${v.fecha?`<span class="src">${esc(fechaLarga(v.fecha))}</span>`:""}
-    ${admin?`<div class="tools"><button class="btn small ghost" data-act="vi-edit" data-id="${esc(v.id)}">Editar</button></div>`:""}</div></article>`;
+    ${vids.filter(embedUrl).map(u=>`<a class="vidlink" href="${esc(u)}" target="_blank" rel="noopener">Si el video no se ve, ábrelo en ${esc(fuente(u))} ›</a>`).join("")}
+    ${admin?`<div class="tools"><button class="btn small ghost" data-act="no-edit" data-id="${esc(n.id)}"${n._video?' data-video="1"':""}>Editar</button></div>`:""}</div></article>`;
 }
 
 /* ---------------- Paneles laterales ---------------- */
 let drawerEl = null;
-const PANELES = {menu:"Menú", fotos:"Fotos y noticias", videos:"Videos", biblia:"Biblia NTV", sinpe:"SINPE Móvil", gracias:"Agradecimientos", encuesta:"Encuesta", buzon:"Recomendaciones"};
+const PANELES = {menu:"Menú", fotos:"Fotos y actividades", biblia:"Biblia NTV", sinpe:"SINPE Móvil", gracias:"Agradecimientos", encuesta:"Encuesta", buzon:"Recomendaciones"};
 function openPanel(name, fromHistory){
   if (!PANELES[name]) return;
   const reuse = drawerEl && !drawerEl.closing;
@@ -785,8 +813,7 @@ function openPanel(name, fromHistory){
   if (name === "menu") {
     const s = D.cfg.sinpe || {};
     body.innerHTML = `<div class="menulist">
-      <button data-panel="fotos"><span class="ic">${ICON.foto}</span><span><b>Fotos y noticias</b><small>${D.noticias.length ? `${D.noticias.length} ${D.noticias.length===1?"publicación":"publicaciones"}` : "Nuestras actividades"}</small></span><span class="arr">›</span></button>
-      <button data-panel="videos"><span class="ic">${ICON.video}</span><span><b>Videos</b><small>${D.videos.length ? `${D.videos.length} ${D.videos.length===1?"video":"videos"}` : "Prédicas y alabanzas"}</small></span><span class="arr">›</span></button>
+      <button data-panel="fotos"><span class="ic">${ICON.foto}</span><span><b>Fotos y actividades</b><small>${publicaciones().length ? `${publicaciones().length} ${publicaciones().length===1?"publicación":"publicaciones"}` : "Fotos, videos y noticias"}</small></span><span class="arr">›</span></button>
       <button data-panel="biblia"><span class="ic">${ICON.biblia}</span><span><b>Biblia NTV</b><small>Nueva Traducción Viviente</small></span><span class="arr">›</span></button>
       ${s.numero?`<button data-panel="sinpe"><span class="ic">${ICON.sinpe}</span><span><b>SINPE Móvil</b><small>Ofrendas y diezmos</small></span><span class="arr">›</span></button>`:""}
       <button data-act="ir-gracias"><span class="ic">${ICON.gracias}</span><span><b>Da gracias</b><small>Se mostrará el domingo</small></span><span class="arr">›</span></button>
@@ -803,12 +830,9 @@ function openPanel(name, fromHistory){
   } else if (name === "buzon") {
     renderSugerencias(body);
   } else if (name === "fotos") {
-    const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    body.innerHTML = list.length ? `<div class="cards">${list.map(n=>nHTML(n)).join("")}</div>` : `<div class="empty">Pronto compartiremos fotos y noticias de nuestras actividades.</div>`;
+    const list = publicaciones();
+    body.innerHTML = list.length ? `<div class="cards">${list.map(n=>nHTML(n)).join("")}</div>` : `<div class="empty">Pronto compartiremos fotos y videos de nuestras actividades.</div>`;
     fillPhotos(body);
-  } else if (name === "videos") {
-    const list = [...D.videos].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    body.innerHTML = list.length ? `<div class="cards">${list.map(v=>vHTML(v)).join("")}</div>` : `<div class="empty">Pronto compartiremos prédicas y alabanzas.</div>`;
   } else {
     renderBiblia(body);
   }
@@ -1173,8 +1197,7 @@ function renderAdmin(){
   <main class="wrap" style="gap:24px">
     <div class="tabs" role="tablist">
       <button data-tab="ev" aria-pressed="${adminTab==="ev"}">Eventos</button>
-      <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y noticias</button>
-      <button data-tab="vi" aria-pressed="${adminTab==="vi"}">Videos</button>
+      <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y actividades</button>
       <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
       <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
@@ -1194,14 +1217,10 @@ function renderTab(){
     t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
       <div class="events">${list.length?list.map(e=>evHTML(e,true)).join(""):`<div class="empty">No hay eventos. Toca “+ Agregar evento”.</div>`}</div></section>`;
   } else if (adminTab === "no") {
-    const list = [...D.noticias].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    t.innerHTML = `<section><div class="head"><div><h2>Fotos y noticias</h2><p class="sub">Comparte fotos de las actividades.</p></div><button class="btn" data-act="no-new">+ Agregar noticia</button></div>
-      ${list.length?`<div class="cards">${list.map(n=>nHTML(n,true)).join("")}</div>`:`<div class="empty">No hay noticias. Toca “+ Agregar noticia”.</div>`}</section>`;
+    const list = publicaciones();
+    t.innerHTML = `<section><div class="head"><div><h2>Fotos y actividades</h2><p class="sub">Comparte fotos, videos y lo que pasó en cada actividad.</p></div><button class="btn" data-act="no-new">+ Agregar publicación</button></div>
+      ${list.length?`<div class="cards">${list.map(n=>nHTML(n,true)).join("")}</div>`:`<div class="empty">No hay publicaciones. Toca “+ Agregar publicación”.</div>`}</section>`;
     fillPhotos(t);
-  } else if (adminTab === "vi") {
-    const list = [...D.videos].sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
-    t.innerHTML = `<section><div class="head"><div><h2>Videos</h2><p class="sub">Pega enlaces de Facebook o YouTube.</p></div><button class="btn" data-act="vi-new">+ Agregar video</button></div>
-      ${list.length?`<div class="cards">${list.map(v=>vHTML(v,true)).join("")}</div>`:`<div class="empty">No hay videos. Toca “+ Agregar video”.</div>`}</section>`;
   } else {
     const c = D.cfg, v = c.vivo||{}, z = c.zoom||{};
     t.innerHTML = `<section><h2>Directo, Zoom, SINPE y datos</h2>
@@ -1327,15 +1346,18 @@ async function compress(file){
   return out.length < 900000 ? out : "";
 }
 function formNoticia(nv){
-  const n = nv || {titulo:"", fecha:hoyISO(), texto:"", fotos:[]};
-  let fotos = [...(n.fotos||[])], nuevas = [];
-  modal(`<h3>${nv?"Editar noticia":"Nueva noticia"}</h3>
+  const n = nv || {titulo:"", fecha:hoyISO(), texto:"", fotos:[], videos:[]};
+  let fotos = [...(n.fotos||[])], nuevas = [], videos = [...(n.videos||[])];
+  modal(`<h3>${nv?"Editar publicación":"Nueva publicación"}</h3>
     <div class="field"><label class="label" for="n-t">Título</label><input type="text" id="n-t" value="${esc(n.titulo)}" placeholder="Ej.: Campamento de jóvenes"></div>
     <div class="field"><label class="label" for="n-f">Fecha</label><input type="date" id="n-f" value="${esc(n.fecha)}"></div>
     <div class="field"><label class="label" for="n-x">Texto</label><textarea id="n-x" placeholder="Cuenta cómo fue la actividad…">${esc(n.texto)}</textarea></div>
     <div class="field"><span class="label">Fotos</span><div class="thumbs" id="n-th"></div>
       <label class="btn ghost" for="n-file" style="width:max-content">+ Agregar fotos</label><input type="file" id="n-file" accept="image/*" multiple hidden>
-      <p class="hint" id="n-up">Hasta 12 fotos por noticia. Se reducen solas para cargar rápido.</p></div>
+      <p class="hint" id="n-up">Hasta 12 fotos por publicación. Se reducen solas para cargar rápido.</p></div>
+    <div class="field"><span class="label">Videos</span><ul class="vlist" id="n-vl"></ul>
+      <div class="vadd"><input type="url" id="n-vu" placeholder="Pega el enlace de Facebook o YouTube"><button type="button" class="btn ghost" id="n-vadd">Agregar</button></div>
+      <p class="hint">Sube el video a Facebook o YouTube, copia el enlace y pégalo aquí. Se verá dentro de la publicación. Hasta 6 videos.</p></div>
     <p class="err" id="n-err" hidden></p>${nv?delBlock():""}
     <div class="actions">${nv?'<button class="btn danger" data-del style="margin-right:auto">Borrar</button>':""}<button class="btn ghost" data-close>Cancelar</button><button class="btn" id="n-save">Guardar</button></div>`,
   (m, close) => {
@@ -1345,6 +1367,18 @@ function formNoticia(nv){
       fillPhotos($("#n-th",m));
     };
     th();
+    const vl = () => { $("#n-vl",m).innerHTML = videos.map((u,i)=>`<li><span>🎬 ${esc(fuente(u))} · ${esc(u)}</span><button type="button" data-rmv="${i}" aria-label="Quitar video">×</button></li>`).join(""); };
+    vl();
+    const addVid = () => {
+      const inp = $("#n-vu",m), u = inp.value.trim(), p = $("#n-err",m);
+      if (!u) return;
+      if (!okUrl(u)) { p.textContent = "Pega un enlace que empiece con https://"; p.hidden = false; return; }
+      if (videos.length >= 6) { p.textContent = "Máximo 6 videos por publicación."; p.hidden = false; return; }
+      p.hidden = true; videos.push(u); inp.value = ""; vl();
+    };
+    $("#n-vadd",m).addEventListener("click", addVid);
+    $("#n-vu",m).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addVid(); } });
+    $("#n-vl",m).addEventListener("click", e => { const b = e.target.closest("[data-rmv]"); if (b) { videos.splice(+b.dataset.rmv,1); vl(); } });
     $("#n-th",m).addEventListener("click", e => {
       const a = e.target.closest("[data-rm]"), b = e.target.closest("[data-rmn]");
       if (a) { fotos.splice(+a.dataset.rm,1); th(); } if (b) { nuevas.splice(+b.dataset.rmn,1); th(); }
@@ -1357,10 +1391,11 @@ function formNoticia(nv){
         $("#n-up",m).textContent = `Preparando foto ${i+1} de ${files.length}…`;
         try { const data = await compress(files[i]); if (data) nuevas.push({data}); } catch {}
       }
-      $("#n-up",m).textContent = "Hasta 12 fotos por noticia. Se reducen solas para cargar rápido.";
+      $("#n-up",m).textContent = "Hasta 12 fotos por publicación. Se reducen solas para cargar rápido.";
       save.disabled = false; th();
     });
     wireDelete(m, close, async () => {
+      if (nv._video) { await deleteDoc(doc(fb,"videos",nv.id)); D.videos = D.videos.filter(x=>x.id!==nv.id); return; }
       await deleteDoc(doc(fb,"noticias",nv.id));
       for (const id of nv.fotos||[]) { try { await deleteDoc(doc(fb,"fotos",id)); } catch {} }
       D.noticias = D.noticias.filter(x=>x.id!==nv.id);
@@ -1368,6 +1403,8 @@ function formNoticia(nv){
     $("#n-save",m).addEventListener("click", async () => {
       const g = id => $("#"+id,m).value.trim(), err = t => { const p=$("#n-err",m); p.textContent=t; p.hidden=!t; };
       if (!g("n-t")) return err("Escribe un título.");
+      if (g("n-vu")) addVid();
+      if (g("n-vu")) return;
       const b = $("#n-save",m); b.disabled = true;
       try {
         const ids = [...fotos];
@@ -1377,33 +1414,13 @@ function formNoticia(nv){
         }
         const removed = (nv?.fotos||[]).filter(id => !ids.includes(id));
         for (const id of removed) { try { await deleteDoc(doc(fb,"fotos",id)); } catch {} }
-        const data = {titulo:g("n-t"), fecha:g("n-f"), texto:g("n-x"), fotos:ids};
-        const id = await saveItem("noticias", nv?.id, data);
+        const data = {titulo:g("n-t"), fecha:g("n-f"), texto:g("n-x"), fotos:ids, videos};
+        // Un video de la antigua sección "Videos" se guarda ahora como publicación.
+        const id = await saveItem("noticias", nv?._video ? null : nv?.id, data);
+        if (nv?._video) { await deleteDoc(doc(fb,"videos",nv.id)); D.videos = D.videos.filter(x=>x.id!==nv.id); }
         D.noticias = [...D.noticias.filter(x=>x.id!==id), {id, ...data}];
-        close(); toast("Noticia guardada"); renderTab();
+        close(); toast("Publicación guardada"); renderTab();
       } catch (x) { console.error(x); err("No se pudo guardar. Revisa tu conexión."); b.disabled=false; b.textContent="Guardar"; }
-    });
-  });
-}
-
-function formVideo(vv){
-  const v = vv || {titulo:"", fecha:hoyISO(), url:""};
-  modal(`<h3>${vv?"Editar video":"Nuevo video"}</h3>
-    <div class="field"><label class="label" for="v-t">Título</label><input type="text" id="v-t" value="${esc(v.titulo)}" placeholder="Ej.: Prédica del domingo"></div>
-    <div class="field"><label class="label" for="v-f">Fecha</label><input type="date" id="v-f" value="${esc(v.fecha)}"></div>
-    <div class="field"><label class="label" for="v-u">Enlace del video</label><input type="url" id="v-u" value="${esc(v.url)}" placeholder="https://www.facebook.com/... o https://youtu.be/..."></div>
-    <p class="err" id="v-err" hidden></p>${vv?delBlock():""}
-    <div class="actions">${vv?'<button class="btn danger" data-del style="margin-right:auto">Borrar</button>':""}<button class="btn ghost" data-close>Cancelar</button><button class="btn" id="v-save">Guardar</button></div>`,
-  (m, close) => {
-    wireDelete(m, close, async () => { await deleteDoc(doc(fb,"videos",vv.id)); D.videos = D.videos.filter(x=>x.id!==vv.id); });
-    $("#v-save",m).addEventListener("click", async () => {
-      const g = id => $("#"+id,m).value.trim(), err = t => { const p=$("#v-err",m); p.textContent=t; p.hidden=!t; };
-      if (!g("v-t")) return err("Escribe un título.");
-      if (!okUrl(g("v-u"))) return err("Pega un enlace que empiece con https://");
-      const data = {titulo:g("v-t"), fecha:g("v-f"), url:g("v-u")};
-      const b = $("#v-save",m); b.disabled = true; b.textContent = "Guardando…";
-      try { const id = await saveItem("videos", vv?.id, data); D.videos = [...D.videos.filter(x=>x.id!==id), {id, ...data}]; close(); toast("Video guardado"); renderTab(); }
-      catch (x) { console.error(x); err("No se pudo guardar."); b.disabled=false; b.textContent="Guardar"; }
     });
   });
 }
@@ -1727,9 +1744,7 @@ document.addEventListener("click", async e => {
   if (a==="ev-new") return formEvento();
   if (a==="ev-edit") return formEvento(D.eventos.find(x=>x.id===el.dataset.id));
   if (a==="no-new") return formNoticia();
-  if (a==="no-edit") return formNoticia(D.noticias.find(x=>x.id===el.dataset.id));
-  if (a==="vi-new") return formVideo();
-  if (a==="vi-edit") return formVideo(D.videos.find(x=>x.id===el.dataset.id));
+  if (a==="no-edit") return formNoticia(publicaciones().find(x=>x.id===el.dataset.id && !!x._video === !!el.dataset.video));
 });
 
 /* ---------------- Inicio ---------------- */
