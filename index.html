@@ -517,10 +517,40 @@ function medidorHTML(e){
     <div class="barra"><span style="width:${pct.toFixed(1)}%"></span></div>
     ${alto?`<p>⚠️ Ya va en ${Math.round(e.pct)} %. Borre videos viejos (Editar → quitar el video o Borrar la publicación) para no pasarse de lo gratis.</p>`:""}</div>`;
 }
+/* Pestaña Almacenamiento: cuánto queda de lo gratis en videos y en fotos. */
+const GRATIS_BD_MB = 1024; // base de datos gratis de Firestore (1 GB), donde están las fotos
+function barraHTML(titulo, usado, total, unidad, detalle, nota){
+  const pct = total ? 100 * usado / total : 0, alto = pct >= AVISO_PCT;
+  const f = n => unidad === "GB" ? n.toFixed(2) : Math.round(n);
+  return `<div class="medidor ${alto?"alto":""}"><div><b>${titulo}</b></div>
+    <div style="font-size:22px;font-weight:800">${f(usado)} ${unidad} <span style="font-size:15px;font-weight:600;color:var(--muted)">de ${f(total)} ${unidad} gratis</span></div>
+    <div class="barra"><span style="width:${Math.min(100,pct).toFixed(1)}%"></span></div>
+    <div>Le quedan <b>${f(Math.max(0,total-usado))} ${unidad}</b> (${Math.max(0,100-pct).toFixed(0)} %) · ${detalle}</div>
+    ${alto?`<p>⚠️ Ya va en ${Math.round(pct)} %. ${nota}</p>`:""}</div>`;
+}
+async function tabAlmacenamiento(t){
+  t.innerHTML = `<section><div><h2>Almacenamiento</h2><p class="sub">Cuánto le queda de lo gratis. Avisa cuando pasa del ${AVISO_PCT} %.</p></div><div class="empty">Calculando…</div></section>`;
+  const e = await espacioVideos(true);
+  const ids = [...new Set([...D.noticias.flatMap(n => n.fotos || []), ...D.eventos.map(ev => ev.imagen).filter(Boolean)])];
+  let bytesFotos = 0;
+  for (let i = 0; i < ids.length; i += 10) {
+    const datos = await Promise.all(ids.slice(i, i + 10).map(id => foto(id).catch(() => "")));
+    bytesFotos += datos.reduce((a, d) => a + (d ? d.length : 0), 0);
+  }
+  if (adminTab !== "al") return;
+  const vid = e ? barraHTML("🎬 Videos subidos del celular", e.bytes / 1073741824, GRATIS_GB, "GB", `${e.n} ${e.n===1?"video":"videos"}`, "Borre videos viejos: en Fotos y actividades → Editar → quitar el video, o borre la publicación.")
+    : `<div class="medidor"><div><b>🎬 Videos subidos del celular</b></div><p>Todavía no está activado el almacenamiento de videos en Firebase (plan Blaze + Storage). Cuando se active, aquí verá cuánto le queda de los ${GRATIS_GB} GB gratis.</p></div>`;
+  const fot = barraHTML("🖼️ Fotos y base de datos", bytesFotos / 1048576, GRATIS_BD_MB, "MB", `${ids.length} ${ids.length===1?"foto":"fotos"}`, "Borre publicaciones o fotos viejas en Fotos y actividades.");
+  t.innerHTML = `<section><div class="head"><div><h2>Almacenamiento</h2><p class="sub">Cuánto le queda de lo gratis. Avisa cuando pasa del ${AVISO_PCT} %.</p></div><button class="btn small ghost" data-act="al-ref">Actualizar</button></div>
+    <div style="display:grid;gap:14px">${vid}${fot}
+    <p class="hint">Las fotos se cuentan aproximado (eventos, peticiones y canciones ocupan muy poco). Las reproducciones de videos tienen 100 GB gratis al mes; eso no se puede medir aquí: para eso está la alerta de presupuesto de Google Cloud.</p></div></section>`;
+  t.querySelector("[data-act='al-ref']")?.addEventListener("click", e2 => { e2.stopPropagation(); tabAlmacenamiento(t); });
+  revisarEspacio();
+}
 let avisoEspacioDado = false;
 async function revisarEspacio(forzar){
   const e = await espacioVideos(forzar); if (!e) return;
-  document.querySelectorAll("[data-medidor]").forEach(x => x.innerHTML = (x.dataset.medidor === "alto" && (e.pct < AVISO_PCT || adminTab === "no")) ? "" : medidorHTML(e));
+  document.querySelectorAll("[data-medidor]").forEach(x => x.innerHTML = (x.dataset.medidor === "alto" && (e.pct < AVISO_PCT || adminTab === "al")) ? "" : medidorHTML(e));
   if (e.pct >= AVISO_PCT && !avisoEspacioDado) {
     avisoEspacioDado = true;
     toast(`⚠️ Espacio de videos al ${Math.round(e.pct)} % de lo gratis`);
@@ -1258,9 +1288,10 @@ function renderAdmin(){
       <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
       <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
+      <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
       <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
-    <div data-medidor="alto">${espacioCache && espacioCache.pct >= AVISO_PCT && adminTab !== "no" ? medidorHTML(espacioCache) : ""}</div>
+    <div data-medidor="alto">${espacioCache && espacioCache.pct >= AVISO_PCT && adminTab !== "al" ? medidorHTML(espacioCache) : ""}</div>
     <div id="tab"></div>
   </main>`;
   renderTab();
@@ -1272,6 +1303,7 @@ function renderTab(){
   if (adminTab === "en") return tabEncuestas(t);
   if (adminTab === "re") return tabRecomendaciones(t);
   if (adminTab === "ca") return tabCanciones(t);
+  if (adminTab === "al") return tabAlmacenamiento(t);
   if (adminTab === "ev") {
     const list = [...D.eventos].sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
     t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
@@ -1279,7 +1311,6 @@ function renderTab(){
   } else if (adminTab === "no") {
     const list = publicaciones();
     t.innerHTML = `<section><div class="head"><div><h2>Fotos y actividades</h2><p class="sub">Comparte fotos, videos y lo que pasó en cada actividad.</p></div><button class="btn" data-act="no-new">+ Agregar publicación</button></div>
-      <div data-medidor>${medidorHTML(espacioCache)}</div>
       ${list.length?`<div class="cards">${list.map(n=>nHTML(n,true)).join("")}</div>`:`<div class="empty">No hay publicaciones. Toca “+ Agregar publicación”.</div>`}</section>`;
     fillPhotos(t);
   } else {
