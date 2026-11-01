@@ -316,6 +316,7 @@ footer .creditos a b{font-weight:800}
 .bandejas button{font-size:15px;padding:9px 16px}
 .badge{background:var(--live);color:#fff;border-radius:999px;padding:0 8px;font-size:12px;margin-left:6px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:grid;gap:16px}
+details.panel summary{cursor:pointer}
 .panel h3{margin:0;font-size:19px;font-weight:800}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:480px){.row2{grid-template-columns:1fr}}
@@ -1465,6 +1466,7 @@ function renderAdmin(){
       <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
       <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
+      <button data-tab="cb" aria-pressed="${adminTab==="cb"}">Cambios</button>
       <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
       <button data-tab="vs" aria-pressed="${adminTab==="vs"}">Visitas</button>
       <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
@@ -1481,6 +1483,7 @@ function renderTab(){
   if (adminTab === "en") return tabEncuestas(t);
   if (adminTab === "re") return tabRecomendaciones(t);
   if (adminTab === "ca") return tabCanciones(t);
+  if (adminTab === "cb") return tabCambios(t);
   if (adminTab === "al") return tabAlmacenamiento(t);
   if (adminTab === "vs") return tabVisitas(t);
   if (adminTab === "ev") {
@@ -2005,6 +2008,83 @@ async function tabRecomendaciones(t){
   t.querySelectorAll("[data-sdel]").forEach(b => b.addEventListener("click", async () => {
     if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
     try { await deleteDoc(doc(fb, "recomendaciones", b.dataset.sdel)); toast("Borrada"); tabRecomendaciones(t); } catch { toast("No se pudo borrar."); }
+  }));
+}
+
+/* ---------------- Cambios a la página (solo admin) ----------------
+   El admin escribe el cambio; se guarda en Firestore (colección "cambios") y se avisa a RBM Solutions
+   por correo (FormSubmit) y WhatsApp (CallMeBot). Cuando el cambio se publica en GitHub con la línea
+   "Cambio: <ID>" en el commit, el flujo .github/workflows/cambios-hechos.yml lo marca como hecho. */
+const CAMBIOS_CORREO = "info@rbmsolutionscr.com";
+let cambiosAviso = null;
+async function cargarAvisoCambios(){
+  if (cambiosAviso) return cambiosAviso;
+  try { const s = await getDoc(doc(fb, "privado", "cambios")); cambiosAviso = s.exists() ? s.data() : {}; } catch { cambiosAviso = {}; }
+  return cambiosAviso;
+}
+async function avisarCambio(id, texto){
+  const a = await cargarAvisoCambios();
+  const msg = `⛪ *Cambio pedido – Iglesia Jesús es el Rey*\nID: ${id}\n\n${texto}`;
+  const envios = [
+    fetch(`https://formsubmit.co/ajax/${CAMBIOS_CORREO}`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ _subject: "⛪ Cambio pedido – Iglesia Jesús es el Rey", _template: "box", _captcha: "false", ID: id, Cambio: texto, Pagina: location.origin })
+    }).then(r => r.ok ? "correo" : Promise.reject())
+  ];
+  if (a.whatsapp && a.apikey) envios.push(fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.whatsapp)}&text=${encodeURIComponent(msg)}&apikey=${encodeURIComponent(a.apikey)}`, { mode: "no-cors" }).then(() => "WhatsApp"));
+  const r = await Promise.allSettled(envios);
+  return r.filter(x => x.status === "fulfilled").map(x => x.value);
+}
+async function tabCambios(t){
+  t.innerHTML = `<div class="empty">Cargando cambios…</div>`;
+  let lista = [];
+  try { lista = (await getDocs(collection(fb, "cambios"))).docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => msDoc(b) - msDoc(a)); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar. Revisa las reglas de Firestore.</div>`; return; }
+  const aviso = await cargarAvisoCambios();
+  const pend = lista.filter(c => c.estado !== "hecho"), hechos = lista.filter(c => c.estado === "hecho");
+  const item = c => `<article class="req"><div class="meta"><span class="who">${c.estado === "hecho" ? "✅ Hecho" : "⏳ Pendiente"}</span><span>${esc(fmtHora(new Date(msDoc(c))))}</span></div>
+    <p style="white-space:pre-wrap">${esc(c.texto)}</p>
+    ${c.nota ? `<p class="hint"><b>Qué se hizo:</b> ${esc(c.nota)}</p>` : ""}
+    <div class="tools" style="justify-content:flex-end">${c.estado !== "hecho" ? `<button class="btn small ghost" data-xre="${esc(c.id)}">Volver a avisar</button>` : ""}<button class="btn small danger" data-xdel="${esc(c.id)}">Borrar</button></div></article>`;
+  t.innerHTML = `<section><div><h2>Cambios a la página</h2><p class="sub">Escribe aquí lo que quieres cambiar o agregar en la página. Le llega un aviso a RBM Solutions por WhatsApp y correo, y aquí verás cuando esté hecho.</p></div>
+    <div class="panel">
+      <div class="field"><label class="label" for="x-t">¿Qué cambio necesitas?</label><textarea id="x-t" maxlength="1500" placeholder="Ej.: Cambiar el horario del culto del domingo a las 10:00 a. m."></textarea></div>
+      <p class="err" id="x-err" hidden></p>
+      <div class="actions"><button class="btn" id="x-send">Enviar cambio</button></div>
+    </div>
+    <h3>Pendientes (${pend.length})</h3>
+    ${pend.length ? pend.map(item).join("") : `<div class="empty">No hay cambios pendientes.</div>`}
+    ${hechos.length ? `<h3>Hechos (${hechos.length})</h3>${hechos.map(item).join("")}` : ""}
+    <details class="panel"><summary><b>Avisos por WhatsApp</b> ${aviso.whatsapp && aviso.apikey ? "· ✓ activados" : "· sin configurar"}</summary>
+      <p class="hint">Lo configura RBM Solutions una sola vez. Número con código de país (ej.: +50688887777) y la clave que manda CallMeBot.</p>
+      <div class="field"><label class="label" for="x-w">Número de WhatsApp</label><input type="text" id="x-w" value="${esc(aviso.whatsapp || "")}" placeholder="+506…"></div>
+      <div class="field"><label class="label" for="x-k">Clave de CallMeBot</label><input type="text" id="x-k" value="${esc(aviso.apikey || "")}" placeholder="123456"></div>
+      <div class="actions"><button class="btn small" id="x-cfg">Guardar</button></div>
+    </details></section>`;
+  $("#x-send", t).addEventListener("click", async () => {
+    const err = x => { const p = $("#x-err", t); p.textContent = x; p.hidden = !x; };
+    const texto = $("#x-t", t).value.trim();
+    if (texto.length < 3) return err("Escribe el cambio que necesitas.");
+    const b = $("#x-send", t); b.disabled = true; b.textContent = "Enviando…";
+    try {
+      const r = await addDoc(collection(fb, "cambios"), { texto, estado: "pendiente", fecha: serverTimestamp() });
+      const ok = await avisarCambio(r.id, texto);
+      toast(ok.length ? `Cambio enviado. Aviso por ${ok.join(" y ")}.` : "Cambio guardado, pero no salió el aviso. Toca “Volver a avisar”.", 4000);
+      tabCambios(t);
+    } catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión."); b.disabled = false; b.textContent = "Enviar cambio"; }
+  });
+  $("#x-cfg", t).addEventListener("click", async () => {
+    const whatsapp = $("#x-w", t).value.replace(/[^\d+]/g, ""), apikey = $("#x-k", t).value.trim();
+    try { await setDoc(doc(fb, "privado", "cambios"), { whatsapp, apikey }); cambiosAviso = { whatsapp, apikey }; toast("Avisos guardados"); tabCambios(t); }
+    catch (x) { console.error(x); toast("No se pudo guardar."); }
+  });
+  t.querySelectorAll("[data-xre]").forEach(b => b.addEventListener("click", async () => {
+    const c = lista.find(x => x.id === b.dataset.xre); if (!c) return;
+    b.disabled = true; const ok = await avisarCambio(c.id, c.texto);
+    toast(ok.length ? `Aviso enviado por ${ok.join(" y ")}.` : "No salió el aviso. Revisa tu conexión."); b.disabled = false;
+  }));
+  t.querySelectorAll("[data-xdel]").forEach(b => b.addEventListener("click", async () => {
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
+    try { await deleteDoc(doc(fb, "cambios", b.dataset.xdel)); toast("Borrado"); tabCambios(t); } catch { toast("No se pudo borrar."); }
   }));
 }
 

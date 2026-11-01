@@ -107,6 +107,19 @@ service cloud.firestore {
       allow update: if request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == resource.data.n + 1;
     }
 
+    // Cambios a la página: solo el admin los pide, ve y borra. Los marca como hechos GitHub (cuenta de servicio).
+    match /cambios/{id} {
+      allow read, delete: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['texto','estado','fecha'])
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() >= 3 && request.resource.data.texto.size() <= 1500
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.fecha == request.time;
+    }
+    // Datos privados del admin (número y clave para avisos por WhatsApp).
+    match /privado/{doc}   { allow read, write: if isAdmin(); }
+
     // Contenido de la página (incluye SINPE): todos lo ven, solo el admin lo cambia.
     match /sitio/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /eventos/{id}    { allow read: if true; allow write: if isAdmin(); }

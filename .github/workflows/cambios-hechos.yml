@@ -1,0 +1,49 @@
+# Marca como "hecho" en el panel (sección Cambios) cada cambio publicado.
+# Busca en los commits líneas "Cambio: <ID>" y actualiza ese documento de Firestore,
+# con el título del commit como nota de lo que se hizo.
+# Usa el mismo secreto FIREBASE_SERVICE_ACCOUNT que el flujo de reglas.
+name: Marcar cambios hechos
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  marcar:
+    if: contains(join(github.event.commits.*.message, ' '), 'Cambio:')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Marcar en Firebase
+        env:
+          LLAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          COMMITS: ${{ toJson(github.event.commits) }}
+        run: |
+          cd "$RUNNER_TEMP"
+          printf '%s' "$LLAVE" > llave.json
+          npm init -y > /dev/null
+          npm install --silent firebase-admin@12
+          cat > marcar.js <<'JS'
+          const admin = require("firebase-admin");
+          admin.initializeApp({ credential: admin.credential.cert(require("./llave.json")) });
+          const db = admin.firestore();
+          const commits = JSON.parse(process.env.COMMITS || "[]");
+          (async () => {
+            let fallos = 0;
+            for (const c of commits) {
+              const nota = c.message.split("\n")[0].slice(0, 300);
+              for (const m of c.message.matchAll(/^Cambio:\s*([A-Za-z0-9]{10,40})\s*$/gm)) {
+                try {
+                  await db.collection("cambios").doc(m[1]).update({ estado: "hecho", nota, hecho: admin.firestore.FieldValue.serverTimestamp() });
+                  console.log("Hecho:", m[1]);
+                } catch (e) { fallos++; console.log("::warning::No se pudo marcar " + m[1] + ": " + e.message); }
+              }
+            }
+            process.exit(fallos ? 1 : 0);
+          })();
+          JS
+          node marcar.js
+          rm -f llave.json
