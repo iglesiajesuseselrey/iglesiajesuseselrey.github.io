@@ -1,11 +1,11 @@
-# Publica las reglas de Firestore en Firebase cada vez que cambia firestore.rules.
+# Publica las reglas de Firestore y de Storage (videos) en Firebase cada vez que cambian.
 # Necesita el secreto FIREBASE_SERVICE_ACCOUNT (la llave JSON de la cuenta de servicio de Firebase).
 name: Reglas de Firebase
 
 on:
   push:
     branches: [main]
-    paths: [firestore.rules, firebase.json]
+    paths: [firestore.rules, storage.rules, firebase.json]
   workflow_dispatch:
 
 jobs:
@@ -36,4 +36,8 @@ jobs:
           PROYECTO=$(jq -r .project_id "$RUNNER_TEMP/llave.json")
           echo "Proyecto: $PROYECTO"
           npx --yes firebase-tools@13 deploy --only firestore:rules --project "$PROYECTO" --non-interactive
+          # Storage solo existe si el proyecto tiene el plan Blaze; si no está activado, se avisa sin fallar.
+          if ! npx --yes firebase-tools@13 deploy --only storage --project "$PROYECTO" --non-interactive; then
+            echo "::warning::No se pudieron publicar las reglas de Storage. Active Storage en Firebase (plan Blaze) y vuelva a correr este flujo."
+          fi
           rm -f "$RUNNER_TEMP/llave.json"

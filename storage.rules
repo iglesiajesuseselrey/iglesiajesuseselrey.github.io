@@ -1,0 +1,15 @@
+rules_version = '2';
+// Videos que el administrador sube desde el celular en "Fotos y actividades".
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /videos/{archivo} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.auth.token.email == 'admin@iglesiajesuseselrey.app'
+        && request.resource.contentType.matches('video/.*')
+        && request.resource.size < 300 * 1024 * 1024;
+      allow delete: if request.auth != null && request.auth.token.email == 'admin@iglesiajesuseselrey.app';
+    }
+    match /{todo=**} { allow read, write: if false; }
+  }
+}
