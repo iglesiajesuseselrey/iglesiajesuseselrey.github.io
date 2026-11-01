@@ -99,6 +99,14 @@ service cloud.firestore {
         && request.resource.data.fecha == request.time;
     }
 
+    // Visitas: un contador por día (sin datos personales). Cualquiera suma 1; solo el admin lo lee.
+    match /visitas/{dia} {
+      allow read: if isAdmin();
+      allow create: if dia.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == 1;
+      allow update: if request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == resource.data.n + 1;
+    }
+
     // Contenido de la página (incluye SINPE): todos lo ven, solo el admin lo cambia.
     match /sitio/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /eventos/{id}    { allow read: if true; allow write: if isAdmin(); }

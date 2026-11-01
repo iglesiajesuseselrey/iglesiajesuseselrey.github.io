@@ -547,6 +547,24 @@ async function tabAlmacenamiento(t){
   t.querySelector("[data-act='al-ref']")?.addEventListener("click", e2 => { e2.stopPropagation(); tabAlmacenamiento(t); });
   revisarEspacio();
 }
+async function tabVisitas(t){
+  t.innerHTML = `<section><div><h2>Visitas</h2></div><div class="empty">Cargando visitas…</div></section>`;
+  let por = {};
+  try { (await getDocs(collection(fb, "visitas"))).docs.forEach(d => por[d.id] = +d.data().n || 0); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar las visitas. Revisa las reglas de Firestore.</div>`; return; }
+  const dia = k => { const d = new Date(); d.setDate(d.getDate() - k); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const suma = n => Array.from({length:n}, (_, k) => por[dia(k)] || 0).reduce((a, b) => a + b, 0);
+  const ult = Array.from({length:14}, (_, k) => dia(13 - k)), max = Math.max(1, ...ult.map(k => por[k] || 0));
+  const caja = (tit, n) => `<div class="medidor" style="text-align:center"><div style="font-size:34px;font-weight:900">${n}</div><div>${tit}</div></div>`;
+  const desde = Object.keys(por).sort()[0];
+  t.innerHTML = `<section><div class="head"><div><h2>Visitas</h2><p class="sub">Personas que entraron a la página. Cada celular cuenta una vez por día; el equipo no se cuenta.${desde?` Se cuenta desde el ${esc(fechaLarga(desde))}.`:""}</p></div><button class="btn small ghost" data-vref>Actualizar</button></div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">${caja("Hoy", por[dia(0)]||0)}${caja("Ayer", por[dia(1)]||0)}${caja("Últimos 3 días", suma(3))}${caja("Últimos 7 días", suma(7))}${caja("Últimos 30 días", suma(30))}${caja("En total", Object.values(por).reduce((a,b)=>a+b,0))}</div>
+    <div class="medidor"><b>Últimos 14 días</b>
+      <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end;height:140px">${ult.map(k => `<div title="${esc(k)}: ${por[k]||0}" style="display:grid;align-content:end;justify-items:center;gap:3px;height:100%"><small style="font-size:11px">${por[k]||""}</small><span style="width:100%;border-radius:5px 5px 0 0;background:var(--accent);height:${Math.max(2, 100*(por[k]||0)/max)}px"></span></div>`).join("")}</div>
+      <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;font-size:10px;color:var(--muted);text-align:center">${ult.map(k => `<span>${+k.slice(8)}</span>`).join("")}</div></div>
+    <p class="hint">“Últimos 7 días” suma las visitas de cada día: si alguien entra lunes y martes, cuenta 2.</p></section>`;
+  t.querySelector("[data-vref]").addEventListener("click", () => tabVisitas(t));
+}
 let avisoEspacioDado = false;
 async function revisarEspacio(forzar){
   const e = await espacioVideos(forzar); if (!e) return;
@@ -567,6 +585,18 @@ let fotoCache = new Map();
 let rol = null, view = "public", adminTab = "ev";
 let cintaIdx = Math.floor(Date.now()/864e5) % CINTA.length;
 
+/* Contador de visitas: una por celular por día. No guarda nada personal.
+   Los celulares del equipo (admin, pastores, músicos…) no se cuentan. */
+async function contarVisita(){
+  try {
+    if (localStorage.getItem("equipo") === "1") return;
+    const hoy = hoyISO();
+    if (localStorage.getItem("visita-dia") === hoy) return;
+    await setDoc(doc(fb, "visitas", hoy), { n: increment(1) }, { merge: true });
+    localStorage.setItem("visita-dia", hoy);
+  } catch {}
+}
+setTimeout(contarVisita, 1500);
 async function loadPublic(){
   try {
     const [c, ev, no, vi] = await Promise.all([
@@ -1289,6 +1319,7 @@ function renderAdmin(){
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
       <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
       <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
+      <button data-tab="vs" aria-pressed="${adminTab==="vs"}">Visitas</button>
       <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div data-medidor="alto">${espacioCache && espacioCache.pct >= AVISO_PCT && adminTab !== "al" ? medidorHTML(espacioCache) : ""}</div>
@@ -1304,6 +1335,7 @@ function renderTab(){
   if (adminTab === "re") return tabRecomendaciones(t);
   if (adminTab === "ca") return tabCanciones(t);
   if (adminTab === "al") return tabAlmacenamiento(t);
+  if (adminTab === "vs") return tabVisitas(t);
   if (adminTab === "ev") {
     const list = [...D.eventos].sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
     t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
@@ -1949,6 +1981,7 @@ onAuthStateChanged(auth, user => {
   rol = Object.values(USUARIOS).find(u => u.email === email)?.rol || null;
   if (unsubReqs) { unsubReqs(); unsubReqs = null; }
   if (user && !rol) { signOut(auth); return; }
+  if (rol) { try { localStorage.setItem("equipo", "1"); } catch {} }
   if (BUZON[rol]) {
     const B = BUZON[rol];
     view = rol; reqs = []; rdest = "general"; pastorVista = "pet"; avisoCerrado = false; primeraCarga = true;
