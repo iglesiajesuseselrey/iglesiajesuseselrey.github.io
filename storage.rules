@@ -3,7 +3,8 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /videos/{archivo} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if request.auth != null && request.auth.token.email == 'admin@iglesiajesuseselrey.app';
       allow create: if request.auth != null
         && request.auth.token.email == 'admin@iglesiajesuseselrey.app'
         && request.resource.contentType.matches('video/.*')
