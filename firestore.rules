@@ -11,6 +11,7 @@ service cloud.firestore {
     function isJovenes()     { return es('jovenes@iglesiajesuseselrey.app'); }
     function isVarones()     { return es('varones@iglesiajesuseselrey.app'); }
     function isNinos()       { return es('ninos@iglesiajesuseselrey.app'); }
+    function isMusicos()     { return es('musicos@iglesiajesuseselrey.app'); }
     function soloCambia(campo) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([campo]);
     }
@@ -83,6 +84,19 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['i']) && request.resource.data.i == 1;
       allow update: if request.resource.data.keys().hasOnly(['i']) && request.resource.data.i == resource.data.i + 1;
+    }
+
+    // Canciones: solo las ven y las editan los músicos y la administración.
+    match /canciones/{id} {
+      allow read, delete: if isMusicos() || isAdmin();
+      allow create, update: if (isMusicos() || isAdmin())
+        && request.resource.data.keys().hasOnly(['titulo','letra','por','fecha'])
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() >= 1 && request.resource.data.titulo.size() <= 120
+        && request.resource.data.letra is string
+        && request.resource.data.letra.size() >= 1 && request.resource.data.letra.size() <= 20000
+        && request.resource.data.por in ['musicos','admin']
+        && request.resource.data.fecha == request.time;
     }
 
     // Contenido de la página (incluye SINPE): todos lo ven, solo el admin lo cambia.

@@ -136,6 +136,17 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 .play{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;margin:0 auto}
 .poster small{display:block;margin-top:8px;font-weight:700;text-align:center}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
+details.song{background:var(--card,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+details.song summary{list-style:none;display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer}
+details.song summary::-webkit-details-marker{display:none}
+details.song summary .t{flex:1;min-width:0}
+details.song summary h3{margin:0;font-size:18px;line-height:1.25;overflow-wrap:anywhere}
+details.song summary small{color:var(--muted);font-weight:600;font-size:13px}
+details.song .chev{color:var(--muted);font-size:20px;transition:transform .2s}
+details.song[open] .chev{transform:rotate(90deg)}
+details.song .letra{margin:0;padding:0 16px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.6}
+details.song .tools{padding:0 16px 16px;justify-content:flex-end}
+#c-l{min-height:320px;font-size:16px;line-height:1.5}
 .vids{display:grid;gap:3px;background:var(--line)}
 .vid{position:relative;aspect-ratio:16/9;background:#000}
 .vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -391,14 +402,16 @@ const firebaseConfig = {
    admin:        edita eventos, fotos y videos de actividades, directo, Zoom y SINPE; no ve peticiones.
    pastores:     ve TODAS las peticiones.
    matrimonios:  ve solo las peticiones dirigidas a los Pastores de Matrimonios.
-   jovenes:      ve solo las peticiones dirigidas a los Pastores de Jóvenes. */
+   jovenes:      ve solo las peticiones dirigidas a los Pastores de Jóvenes.
+   musicos:      solo agrega canciones (título y letra); el admin las ve en Canciones. */
 const USUARIOS = {
   admin:       { email: "admin@iglesiajesuseselrey.app",       rol: "admin" },
   pastores:    { email: "pastores@iglesiajesuseselrey.app",    rol: "pastores" },
   matrimonios: { email: "matrimonios@iglesiajesuseselrey.app", rol: "matrimonios" },
   jovenes:     { email: "jovenes@iglesiajesuseselrey.app",     rol: "jovenes" },
   varones:     { email: "varones@iglesiajesuseselrey.app",     rol: "varones" },
-  ninos:       { email: "ninos@iglesiajesuseselrey.app",       rol: "ninos" }
+  ninos:       { email: "ninos@iglesiajesuseselrey.app",       rol: "ninos" },
+  musicos:     { email: "musicos@iglesiajesuseselrey.app",     rol: "musicos" }
 };
 /* Permite escribir el usuario con tilde o ñ (ej. "niños", "jóvenes") */
 const usuarioDe = t => USUARIOS[String(t||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")];
@@ -1032,7 +1045,7 @@ async function mostrarNotif(titulo, cuerpo){
 
 function loginModal(first=false){
   modal(`<h3>${first?"Crear contraseña":"Acceso de administración"}</h3>
-    ${first?`<p class="hint">Se hace una sola vez por usuario. Usuarios: <b>admin</b>, <b>pastores</b>, <b>matrimonios</b>, <b>jovenes</b>, <b>varones</b> o <b>ninos</b>. Elige una contraseña de al menos 8 caracteres.</p>`:""}
+    ${first?`<p class="hint">Se hace una sola vez por usuario. Usuarios: <b>admin</b>, <b>pastores</b>, <b>matrimonios</b>, <b>jovenes</b>, <b>varones</b>, <b>ninos</b> o <b>musicos</b>. Elige una contraseña de al menos 8 caracteres.</p>`:""}
     <form id="lf" novalidate style="gap:14px">
       <div class="field"><label class="label" for="l-u">Usuario</label><input type="text" id="l-u" autocomplete="username" autocapitalize="none" placeholder="Ej.: pastores"></div>
       <div class="field"><label class="label" for="l-p">Contraseña</label><input type="password" id="l-p" autocomplete="${first?"new-password":"current-password"}"></div>
@@ -1201,6 +1214,7 @@ function renderAdmin(){
       <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
       <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
+      <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
       <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div id="tab"></div>
@@ -1212,6 +1226,7 @@ function renderTab(){
   if (adminTab === "gr") { agrSel = null; return tabAgradecimientos(t); }
   if (adminTab === "en") return tabEncuestas(t);
   if (adminTab === "re") return tabRecomendaciones(t);
+  if (adminTab === "ca") return tabCanciones(t);
   if (adminTab === "ev") {
     const list = [...D.eventos].sort((a,b)=>(proxima(a)+(a.hora||"")).localeCompare(proxima(b)+(b.hora||"")));
     t.innerHTML = `<section><div class="head"><div><h2>Eventos</h2><p class="sub">Los eventos de una sola vez se ocultan solos cuando pasan. Los semanales siempre se muestran.</p></div><button class="btn" data-act="ev-new">+ Agregar evento</button></div>
@@ -1712,6 +1727,76 @@ async function tabRecomendaciones(t){
   }));
 }
 
+/* ---------------- Canciones (músicos y administración) ---------------- */
+let canciones = [], cancionBusca = "";
+function renderMusicos(){
+  $("#root").innerHTML = `<div class="adminbar"><div class="wrap"><b>Músicos</b>
+    <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
+    <main class="wrap" style="gap:20px"><div id="tab"></div></main>`;
+  tabCanciones($("#tab"));
+}
+async function tabCanciones(t){
+  t.innerHTML = `<div class="empty">Cargando canciones…</div>`;
+  try { canciones = (await getDocs(collection(fb, "canciones"))).docs.map(d => ({ id: d.id, ...d.data() })); }
+  catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar las canciones. Revisa las reglas de Firestore.</div>`; return; }
+  pintarCanciones(t);
+}
+function pintarCanciones(t){
+  const sinTilde = x => String(x||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const q = sinTilde(cancionBusca);
+  const lista = [...canciones].sort((a,b) => sinTilde(a.titulo).localeCompare(sinTilde(b.titulo)));
+  const vis = q ? lista.filter(c => sinTilde(c.titulo + " " + c.letra).includes(q)) : lista;
+  const quien = rol === "admin" ? "Los músicos agregan aquí las canciones. Tú también puedes agregar o corregir." : "Agrega el título y la letra. La administración las ve en su sección Canciones.";
+  t.innerHTML = `<section><div class="head"><div><h2>Canciones</h2><p class="sub">${lista.length} ${lista.length===1?"canción":"canciones"} · ${quien}</p></div><button class="btn" data-cnew>+ Agregar canción</button></div>
+    ${lista.length > 3 ? `<div class="field"><input type="search" id="c-q" placeholder="Buscar por título o letra" value="${esc(cancionBusca)}"></div>` : ""}
+    <div style="display:grid;gap:10px" id="c-list">
+    ${vis.length ? vis.map(c => `<details class="song"><summary><span class="t"><h3>${esc(c.titulo)}</h3><small>${c.fecha?.toDate ? "Actualizada el " + esc(c.fecha.toDate().toLocaleDateString("es-CR",{day:"numeric",month:"short",year:"numeric"})) : ""}</small></span><span class="chev">›</span></summary>
+      <pre class="letra">${esc(c.letra)}</pre>
+      <div class="tools"><button class="btn small ghost" data-ccopy="${esc(c.id)}">Copiar letra</button><button class="btn small ghost" data-cedit="${esc(c.id)}">Editar</button></div></details>`).join("")
+      : `<div class="empty">${lista.length ? "No hay canciones con esa búsqueda." : "Todavía no hay canciones. Toca “+ Agregar canción”."}</div>`}
+    </div></section>`;
+  const qi = $("#c-q", t);
+  if (qi) qi.addEventListener("input", () => { cancionBusca = qi.value; const pos = qi.selectionStart; pintarCanciones(t); const n = $("#c-q", t); n.focus(); try { n.setSelectionRange(pos, pos); } catch {} });
+  $("[data-cnew]", t).addEventListener("click", () => formCancion(null, t));
+  t.querySelectorAll("[data-cedit]").forEach(b => b.addEventListener("click", () => formCancion(canciones.find(c => c.id === b.dataset.cedit), t)));
+  t.querySelectorAll("[data-ccopy]").forEach(b => b.addEventListener("click", async () => {
+    const c = canciones.find(x => x.id === b.dataset.ccopy); if (!c) return;
+    try { await navigator.clipboard.writeText(c.titulo + "\n\n" + c.letra); toast("Letra copiada"); } catch { toast("No se pudo copiar."); }
+  }));
+}
+function formCancion(cv, t){
+  const c = cv || {titulo:"", letra:""};
+  modal(`<h3>${cv?"Editar canción":"Nueva canción"}</h3>
+    <div class="field"><label class="label" for="c-t">Título de la canción</label><input type="text" id="c-t" maxlength="120" value="${esc(c.titulo)}" placeholder="Ej.: Cuán grande es Él"></div>
+    <div class="field"><label class="label" for="c-l">Letra</label><textarea id="c-l" maxlength="20000" placeholder="Escribe o pega la letra completa…">${esc(c.letra)}</textarea></div>
+    <p class="err" id="c-err" hidden></p>${cv?delBlock():""}
+    <div class="actions">${cv?'<button class="btn danger" data-del style="margin-right:auto">Borrar</button>':""}<button class="btn ghost" data-close>Cancelar</button><button class="btn" id="c-save">Guardar</button></div>`,
+  (m, close) => {
+    const b0 = m.querySelector("[data-del]");
+    if (b0) {
+      b0.addEventListener("click", () => { m.querySelector("[data-confirm]").hidden = false; b0.hidden = true; });
+      m.querySelector("[data-nodel]").addEventListener("click", () => { m.querySelector("[data-confirm]").hidden = true; b0.hidden = false; });
+      m.querySelector("[data-yesdel]").addEventListener("click", async () => {
+        try { await deleteDoc(doc(fb, "canciones", cv.id)); canciones = canciones.filter(x => x.id !== cv.id); close(); toast("Canción borrada"); pintarCanciones(t); }
+        catch (x) { console.error(x); toast("No se pudo borrar."); }
+      });
+    }
+    $("#c-save", m).addEventListener("click", async () => {
+      const err = x => { const p = $("#c-err", m); p.textContent = x; p.hidden = !x; };
+      const titulo = $("#c-t", m).value.trim(), letra = $("#c-l", m).value.trim();
+      if (!titulo) return err("Escribe el título de la canción.");
+      if (!letra) return err("Escribe la letra de la canción.");
+      const b = $("#c-save", m); b.disabled = true; b.textContent = "Guardando…";
+      const data = { titulo, letra, por: rol, fecha: serverTimestamp() };
+      try {
+        const id = await saveItem("canciones", cv?.id, data);
+        canciones = [...canciones.filter(x => x.id !== id), { id, ...data, fecha: { toDate: () => new Date() } }];
+        close(); toast("Canción guardada"); pintarCanciones(t);
+      } catch (x) { console.error(x); err("No se pudo guardar. Revisa tu conexión."); b.disabled = false; b.textContent = "Guardar"; }
+    });
+  });
+}
+
 /* ---------------- Clics ---------------- */
 document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) closeAll(); });
 document.addEventListener("click", async e => {
@@ -1732,7 +1817,7 @@ document.addEventListener("click", async e => {
     return;
   }
   const a = el.dataset.act;
-  if (a==="login") { if (drawerEl) closeAll(); if (rol) { view = rol; rol==="admin" ? renderAdmin() : renderPastor(); window.scrollTo(0,0); } else setTimeout(() => loginModal(false), drawerEl ? 300 : 0); return; }
+  if (a==="login") { if (drawerEl) closeAll(); if (rol) { view = rol; rol==="admin" ? renderAdmin() : rol==="musicos" ? renderMusicos() : renderPastor(); window.scrollTo(0,0); } else setTimeout(() => loginModal(false), drawerEl ? 300 : 0); return; }
   if (a==="logout") { if (BUZON[rol]) guardarVisto(Date.now()); try { navigator.clearAppBadge?.(); } catch {} await signOut(auth); return; }
   if (a==="ir-gracias") { if (drawerEl) closeAll(); const g = $("#gracias"); if (g) setTimeout(() => g.scrollIntoView({behavior:"smooth"}), drawerEl ? 300 : 0); else openPanel("gracias"); return; }
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
@@ -1778,6 +1863,8 @@ onAuthStateChanged(auth, user => {
         if (view===rol) renderPastor();
       },
       err => { console.error(err); toast("No tienes permiso para ver las peticiones. Revisa las reglas de Firestore."); });
+  } else if (rol === "musicos") {
+    if (irAlPanel) { view = "musicos"; renderMusicos(); }
   } else if (rol === "admin") {
     if (irAlPanel) { view = "admin"; renderAdmin(); }
     apagarDirectoVencido();
