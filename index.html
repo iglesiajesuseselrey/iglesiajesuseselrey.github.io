@@ -136,7 +136,7 @@ h2{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,4.6vw,36
 .play{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;margin:0 auto}
 .poster small{display:block;margin-top:8px;font-weight:700;text-align:center}
 .tools{display:flex;gap:8px;flex-wrap:wrap}
-details.song{background:var(--card,#fff);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+details.song{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 details.song summary{list-style:none;display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer}
 details.song summary::-webkit-details-marker{display:none}
 details.song summary .t{flex:1;min-width:0}
@@ -144,7 +144,7 @@ details.song summary h3{margin:0;font-size:18px;line-height:1.25;overflow-wrap:a
 details.song summary small{color:var(--muted);font-weight:600;font-size:13px}
 details.song .chev{color:var(--muted);font-size:20px;transition:transform .2s}
 details.song[open] .chev{transform:rotate(90deg)}
-details.song .letra{margin:0;padding:0 16px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.6}
+details.song .letra{margin:0;color:var(--ink);padding:0 16px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.6}
 details.song .tools{padding:0 16px 16px;justify-content:flex-end}
 #c-l{min-height:320px;font-size:16px;line-height:1.5}
 .vids{display:grid;gap:3px;background:var(--line)}
