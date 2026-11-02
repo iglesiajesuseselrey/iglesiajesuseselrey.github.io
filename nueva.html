@@ -607,6 +607,50 @@ button.kpi4i:hover{transform:translateY(-3px);border-color:var(--k);box-shadow:0
 @keyframes toast4{from{opacity:0;transform:translate(-50%,20px) scale(.9)}}
 .drawer .menulist>*{animation:entra4 .45s cubic-bezier(.2,.7,.2,1) both}
 .drawer .menulist>*:nth-child(2){animation-delay:.04s}.drawer .menulist>*:nth-child(3){animation-delay:.08s}.drawer .menulist>*:nth-child(4){animation-delay:.12s}.drawer .menulist>*:nth-child(5){animation-delay:.16s}.drawer .menulist>*:nth-child(6){animation-delay:.2s}.drawer .menulist>*:nth-child(7){animation-delay:.24s}.drawer .menulist>*:nth-child(n+8){animation-delay:.28s}
+
+/* ===== Versión 5: fuegos artificiales al tocar y panel del equipo estilo profesional ===== */
+html{scroll-behavior:smooth}
+#fuegos5{position:absolute;inset:0;z-index:1;pointer-events:none;width:100%;height:100%}
+.hero .wrap{position:relative;z-index:2}
+.prox3{cursor:pointer;transition:transform .25s,box-shadow .3s}
+.prox3:hover{transform:translateY(-2px);box-shadow:0 18px 40px -18px rgba(255,214,130,.6)}
+.prox3:active{transform:scale(.98)}
+.toca5{font-size:12px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.75);display:flex;gap:6px;align-items:center;animation:toca5 2.6s ease-in-out infinite}
+@keyframes toca5{50%{opacity:.35}}
+.reloj3 span.late{animation:late5 .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes late5{from{transform:translateY(-6px) scale(1.08);box-shadow:0 0 0 1px rgba(255,214,130,.6),0 0 18px rgba(255,214,130,.5)}}
+/* panel del equipo */
+.adminbar{background:rgba(255,255,255,.82)!important;backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);color:var(--ink)!important;animation:none!important;border-bottom:1px solid var(--line);box-shadow:none!important}
+.adminbar::after{display:none}
+.adminbar .wrap{padding-block:12px}
+.adminbar .wrap>b{font-size:17px;color:var(--ink)}
+.adminbar .wrap>b small{display:block;font:600 12px var(--font-body,inherit);color:var(--muted);letter-spacing:0}
+.adminbar .wrap>b img{height:38px!important;filter:none!important;background:linear-gradient(145deg,#2c20c4,#0b0840);border-radius:12px;padding:5px}
+.adminbar .btn{background:var(--surface)!important;color:var(--ink)!important;border:1px solid var(--line)!important;display:inline-flex;align-items:center;gap:7px;border-radius:999px}
+.adminbar .btn svg,.tabs5 svg,.kpi5 svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+@media (prefers-color-scheme:dark){.adminbar{background:rgba(14,12,40,.82)!important}}
+.hola4{position:relative;overflow:hidden;border-radius:24px!important;padding:24px 26px!important;background:radial-gradient(120% 140% at 100% 0%,#3a2bd6 0%,transparent 55%),linear-gradient(135deg,#120c5e,#0b0840)!important;box-shadow:0 30px 60px -30px rgba(23,15,120,.7)!important}
+.hola4::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;border:1px solid rgba(255,255,255,.12);box-shadow:0 0 0 40px rgba(255,255,255,.03),0 0 0 80px rgba(255,255,255,.02)}
+.hola4 small{font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.14em!important;color:#c8c2ff!important}
+.hola4 b{font-size:clamp(24px,3.4vw,32px)!important}
+.hola4 .prox5{margin-top:8px;color:#e9e6ff;font-size:15px}
+.hola4 .prox5 strong{color:#fff}
+.kpi5{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.kpi5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi5 button{position:relative;overflow:hidden;display:grid;gap:4px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px 16px;color:var(--ink);font:inherit;cursor:pointer;transition:transform .2s,box-shadow .25s,border-color .25s;animation:entra4 .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+.kpi5 button::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--k)}
+.kpi5 button:hover{transform:translateY(-3px);border-color:var(--k);box-shadow:0 16px 30px -18px var(--k)}
+.kpi5 .i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--k) 14%,transparent);color:var(--k);margin-bottom:6px}
+.kpi5 b{font:900 30px/1.05 var(--font-display);font-variant-numeric:tabular-nums}
+.kpi5 span{font-size:13px;color:var(--muted);font-weight:700}
+.kpi4{display:none!important}
+.tabs.tabs5{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;padding:4px 2px 10px;margin:0 -2px;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.tabs.tabs5::-webkit-scrollbar{display:none}
+.tabs.tabs5 button{flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px!important;padding:10px 16px!important;font-weight:700;background:var(--surface);border:1px solid var(--line);color:var(--ink);transition:background .2s,box-shadow .25s,color .2s}
+.tabs.tabs5 button[aria-pressed="true"]{background:linear-gradient(135deg,#4a3cf0,#2c20c4)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 10px 24px -10px rgba(53,36,196,.8)}
+#tab>section{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 20px 40px -32px rgba(23,15,120,.45)}
+#tab>section h2{font-size:clamp(24px,3vw,30px)!important}
+@media (max-width:560px){#tab>section{padding:16px;border-radius:18px}}
 @media (prefers-reduced-motion:reduce){.intro4{display:none}.an4,.kpi4>*,.hola4{animation:none}}
 </style>
 <script>
@@ -2581,6 +2625,106 @@ function decorarEquipo(){
 const _renderAdmin4 = renderAdmin; renderAdmin = function(){ _renderAdmin4(); decorarEquipo(); };
 const _renderPastor4 = renderPastor; renderPastor = function(){ _renderPastor4(); decorarEquipo(); };
 const _renderMusicos4 = renderMusicos; renderMusicos = function(){ _renderMusicos4(); decorarEquipo(); };
+
+/* ===================== Versión 5 ===================== */
+const IC5 = {
+  ev: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  no: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/>',
+  gr: '<path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>',
+  en: '<path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/>',
+  re: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-5A8 8 0 1 1 21 12z"/>',
+  ca: '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  cb: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5 6.5 20.5l5.8-5.8a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/>',
+  al: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  vs: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  cfg: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  ver: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  salir: '<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/>'
+};
+const sv5 = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC5[k]}</svg>`;
+
+/* --- Fuegos artificiales: se lanzan al tocar la portada o el reloj --- */
+let fuegos5 = null;
+function iniciarFuegos(){
+  const hero = $(".hero"); if (!hero || QUIETO || hero.querySelector("#fuegos5")) return;
+  const cv = document.createElement("canvas"); cv.id = "fuegos5"; cv.setAttribute("aria-hidden", "true"); hero.prepend(cv);
+  const cx = cv.getContext("2d"), parts = []; let corriendo = false, dpr = Math.min(2, devicePixelRatio || 1);
+  const medir = () => { const r = hero.getBoundingClientRect(); cv.width = r.width * dpr; cv.height = r.height * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  medir(); addEventListener("resize", medir);
+  const COL = ["#ffe3a3", "#ffd27a", "#ffffff", "#c9c2ff", "#8f86ff", "#ff9ec4", "#7fe0ff"];
+  function tick(){
+    const r = hero.getBoundingClientRect();
+    cx.globalCompositeOperation = "destination-out"; cx.fillStyle = "rgba(0,0,0,.22)"; cx.fillRect(0, 0, r.width, r.height);
+    cx.globalCompositeOperation = "lighter";
+    for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i];
+      if (p.cohete) { p.x += p.vx; p.y += p.vy; p.vy += .05; cx.fillStyle = "#fff6d8"; cx.beginPath(); cx.arc(p.x, p.y, 2.2, 0, 7); cx.fill();
+        if (p.vy >= -1.2) { parts.splice(i, 1); estallar(p.x, p.y, p.col); } continue; }
+      p.vx *= .985; p.vy = p.vy * .985 + .045; p.x += p.vx; p.y += p.vy; p.vida -= p.paso;
+      if (p.vida <= 0) { parts.splice(i, 1); continue; }
+      cx.globalAlpha = Math.max(0, p.vida); cx.fillStyle = p.c; cx.beginPath(); cx.arc(p.x, p.y, p.t * (p.brillo && Math.random() < .3 ? 1.6 : 1), 0, 7); cx.fill(); }
+    cx.globalAlpha = 1;
+    if (parts.length) requestAnimationFrame(tick); else { corriendo = false; cx.clearRect(0, 0, r.width, r.height); }
+  }
+  function estallar(x, y, col, n = 70){
+    const base = col || COL[Math.floor(Math.random() * COL.length)], dos = COL[Math.floor(Math.random() * COL.length)];
+    for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2 + Math.random() * .2, v = 1.8 + Math.random() * 3.4;
+      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vida: 1, paso: .011 + Math.random() * .012, t: 1.3 + Math.random() * 1.5, c: k % 3 ? base : dos, brillo: k % 4 === 0 }); }
+    if (!corriendo) { corriendo = true; requestAnimationFrame(tick); }
+  }
+  function cohete(x, yFin){
+    const r = hero.getBoundingClientRect(), y0 = r.height, v = -Math.sqrt(2 * .05 * Math.max(60, y0 - yFin));
+    parts.push({ cohete: true, x, y: y0, vx: (Math.random() - .5) * .6, vy: v, col: COL[Math.floor(Math.random() * COL.length)] });
+    if (!corriendo) { corriendo = true; requestAnimationFrame(tick); }
+  }
+  fuegos5 = { estallar, cohete, show(){ const r = hero.getBoundingClientRect(); [.25, .5, .75].forEach((f, i) => setTimeout(() => cohete(r.width * f, r.height * (.18 + Math.random() * .15)), i * 260)); } };
+  hero.addEventListener("pointerdown", e => {
+    if (e.target.closest("a,button,input,textarea,select")) return;
+    const r = hero.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    if (e.target.closest("#prox3")) { fuegos5.show(); return; }
+    Math.random() < .5 ? estallar(x, y) : cohete(x, y);
+  });
+}
+// el reloj: los números "laten" cuando cambian y se puede tocar
+let reloj5Ant = [];
+const _pintarReloj5 = pintarReloj3;
+pintarReloj3 = function(){ _pintarReloj5(); const sp = [...document.querySelectorAll("#prox3 .reloj3 span")];
+  sp.forEach((el, i) => { const v = el.textContent; if (reloj5Ant[i] !== undefined && reloj5Ant[i] !== v) el.classList.add("late"); reloj5Ant[i] = v; }); };
+function mejorar5(){
+  if (view !== "public") return;
+  iniciarFuegos();
+  const p = $("#prox3"); if (p && !p.querySelector(".toca5") && !QUIETO) p.insertAdjacentHTML("beforeend", `<span class="toca5">✨ Toca el reloj o la pantalla</span>`);
+  if (!sessionStorage.getItem("fuegos5")) { try { sessionStorage.setItem("fuegos5", "1"); } catch {}
+    const lanzar = () => setTimeout(() => fuegos5 && fuegos5.show(), 500), intro = $(".intro4");
+    if (intro) { const obs = new MutationObserver(() => { if (!document.body.contains(intro) || intro.classList.contains("fuera")) { obs.disconnect(); lanzar(); } }); obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] }); }
+    else lanzar(); }
+}
+const _renderPublic5 = renderPublic;
+renderPublic = function(){ _renderPublic5(); mejorar5(); };
+
+/* --- Panel del equipo: barra, saludo con el próximo encuentro, tarjetas con íconos y pestañas con íconos --- */
+const TABS5 = { ev: "Eventos", no: "Fotos y actividades", gr: "Agradecimientos", en: "Encuestas", re: "Recomendaciones", ca: "Canciones", cb: "Cambios", al: "Almacenamiento", vs: "Visitas", cfg: "Ajustes" };
+function decorar5(){
+  const bar = $(".adminbar .wrap > b");
+  if (bar && !bar.querySelector("small")) { const t = view === "admin" ? "Panel de administración" : view === "musicos" ? "Panel de músicos" : "Panel de oración";
+    [...bar.childNodes].forEach(n => { if (n.nodeType === 3) n.remove(); }); bar.insertAdjacentHTML("beforeend", `<span>${t}<small>${esc(D.cfg.iglesia || DEFAULT.iglesia)}</small></span>`); }
+  document.querySelectorAll(".adminbar .btn").forEach(b => { if (b.querySelector("svg")) return; const k = /salir/i.test(b.textContent) ? "salir" : /ver/i.test(b.textContent) ? "ver" : ""; if (k) b.insertAdjacentHTML("afterbegin", sv5(k)); });
+  const tabs = $("#root > main .tabs"); if (view === "admin" && tabs && !tabs.classList.contains("tabs5")) { tabs.classList.add("tabs5");
+    tabs.querySelectorAll("[data-tab]").forEach(b => { const k = b.dataset.tab; if (IC5[k]) b.innerHTML = sv5(k) + `<span>${TABS5[k] || b.textContent}</span>`; }); }
+  const hola = $(".hola4");
+  if (hola && view === "admin" && !hola.querySelector(".prox5")) { const p = proximoEvento();
+    if (p) { const dias = Math.round((new Date(p.t).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 864e5), cuando = dias === 0 ? "hoy" : dias === 1 ? "mañana" : `el ${p.t.toLocaleDateString("es-CR", { weekday: "long" })}`;
+      hola.insertAdjacentHTML("beforeend", `<p class="prox5">Próximo encuentro: <strong>${esc(p.e.titulo)}</strong> · ${cuando} a las ${esc(hora12(p.e.hora))}</p>`); } }
+  const main = $("#root > main");
+  if (main && view === "admin" && !main.querySelector(".kpi5")) { const act = (D.encuestas || []).filter(x => x.activa).length, hoy = hoyISO(), prox = D.eventos.filter(e => e.repite === "semanal" || (e.fecha || "") >= hoy).length;
+    const k = [["ev", prox, "eventos activos", "#3524c4"], ["no", publicaciones().length, "publicaciones", "#1f9d8a"], ["en", act, "encuestas abiertas", "#d39a1c"], ["vs", "—", "visitas hoy", "#c4407a"]];
+    const h = `<div class="kpi5">${k.map(([t, n, l, c], i) => `<button type="button" data-tab="${t}" style="--k:${c};--i:${i}"><span class="i">${sv5(t)}</span><b ${t === "vs" ? 'id="vis5"' : ""}>${n}</b><span>${l}</span></button>`).join("")}</div>`;
+    (main.querySelector(".kpi4") || hola)?.insertAdjacentHTML("afterend", h);
+    getDoc(doc(fb, "visitas", hoyISO())).then(d => { const el = $("#vis5"); if (el) el.textContent = d.exists() ? (+d.data().n || 0) : 0; }).catch(() => { const el = $("#vis5"); if (el) el.textContent = "↗"; });
+  }
+}
+const _renderAdmin5 = renderAdmin; renderAdmin = function(){ _renderAdmin5(); decorar5(); };
+const _renderPastor5 = renderPastor; renderPastor = function(){ _renderPastor5(); decorar5(); };
+const _renderMusicos5 = renderMusicos; renderMusicos = function(){ _renderMusicos5(); decorar5(); };
 
 /* ---------------- Inicio ---------------- */
 renderPublic();
