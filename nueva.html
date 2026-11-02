@@ -644,10 +644,19 @@ html{scroll-behavior:smooth}
 .kpi5 b{font:900 30px/1.05 var(--font-display);font-variant-numeric:tabular-nums}
 .kpi5 span{font-size:13px;color:var(--muted);font-weight:700}
 .kpi4{display:none!important}
-.tabs.tabs5{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:8px;padding:4px 2px 10px;margin:0 -2px;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
-.tabs.tabs5::-webkit-scrollbar{display:none}
+.tabs.tabs5{flex-wrap:wrap;gap:8px}
 .tabs.tabs5 button{flex:none;display:inline-flex;align-items:center;gap:8px;border-radius:999px!important;padding:10px 16px!important;font-weight:700;background:var(--surface);border:1px solid var(--line);color:var(--ink);transition:background .2s,box-shadow .25s,color .2s}
 .tabs.tabs5 button[aria-pressed="true"]{background:linear-gradient(135deg,#4a3cf0,#2c20c4)!important;border-color:transparent!important;color:#fff!important;box-shadow:0 10px 24px -10px rgba(53,36,196,.8)}
+.tabs.tabs5 button span{white-space:nowrap}
+@media (max-width:640px){
+  .tabs.tabs5{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tabs.tabs5 button{flex-direction:column;justify-content:center;gap:6px;border-radius:16px!important;padding:12px 8px!important;font-size:13.5px;min-height:78px;box-shadow:none}
+  .tabs.tabs5 button svg{width:30px;height:30px;padding:6px;border-radius:9px;background:color-mix(in srgb,#3524c4 12%,transparent);color:#3524c4;box-sizing:border-box}
+  .tabs.tabs5 button[aria-pressed="true"] svg{background:rgba(255,255,255,.18);color:#fff}
+  .tabs.tabs5 button span{white-space:normal;line-height:1.2;text-align:center}
+}
+@media (max-width:640px) and (prefers-color-scheme:dark){.tabs.tabs5 button svg{color:#b9b1ff;background:rgba(143,134,255,.15)}}
+
 #tab>section{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 20px 40px -32px rgba(23,15,120,.45)}
 #tab>section h2{font-size:clamp(24px,3vw,30px)!important}
 @media (max-width:560px){#tab>section{padding:16px;border-radius:18px}}
@@ -1688,16 +1697,16 @@ function renderAdmin(){
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:24px">
     <div class="tabs" role="tablist">
+      <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
+      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}" title="Directo, Zoom, SINPE y datos">Ajustes</button>
+      <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
+      <button data-tab="cb" aria-pressed="${adminTab==="cb"}">Cambios</button>
+      <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
+      <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="ev" aria-pressed="${adminTab==="ev"}">Eventos</button>
       <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y actividades</button>
-      <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
-      <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
-      <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
-      <button data-tab="cb" aria-pressed="${adminTab==="cb"}">Cambios</button>
-      <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
       <button data-tab="vs" aria-pressed="${adminTab==="vs"}">Visitas</button>
-      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div data-medidor="alto">${espacioCache && espacioCache.pct >= AVISO_PCT && adminTab !== "al" ? medidorHTML(espacioCache) : ""}</div>
     <div id="tab"></div>

@@ -300,6 +300,7 @@ footer .creditos a b{font-weight:800}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
 .tabs button{font-size:14px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:7px 14px;cursor:pointer}
 .tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (max-width:640px){.tabs[role=tablist]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tabs[role=tablist] button{border-radius:14px;padding:12px 10px;min-height:48px;font-size:14px;line-height:1.2}}
 .req{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:8px;min-width:0}
 .req.prayed{opacity:.65}
 .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
@@ -1460,16 +1461,16 @@ function renderAdmin(){
     <div class="tools"><button class="btn small" data-act="ver-sitio">Ver la página</button><button class="btn small" data-act="logout">Salir</button></div></div></div>
   <main class="wrap" style="gap:24px">
     <div class="tabs" role="tablist">
+      <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
+      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}" title="Directo, Zoom, SINPE y datos">Ajustes</button>
+      <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
+      <button data-tab="cb" aria-pressed="${adminTab==="cb"}">Cambios</button>
+      <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
+      <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="ev" aria-pressed="${adminTab==="ev"}">Eventos</button>
       <button data-tab="no" aria-pressed="${adminTab==="no"}">Fotos y actividades</button>
-      <button data-tab="gr" aria-pressed="${adminTab==="gr"}">Agradecimientos</button>
-      <button data-tab="en" aria-pressed="${adminTab==="en"}">Encuestas</button>
       <button data-tab="re" aria-pressed="${adminTab==="re"}">Recomendaciones</button>
-      <button data-tab="ca" aria-pressed="${adminTab==="ca"}">Canciones</button>
-      <button data-tab="cb" aria-pressed="${adminTab==="cb"}">Cambios</button>
-      <button data-tab="al" aria-pressed="${adminTab==="al"}">Almacenamiento</button>
       <button data-tab="vs" aria-pressed="${adminTab==="vs"}">Visitas</button>
-      <button data-tab="cfg" aria-pressed="${adminTab==="cfg"}">Directo, Zoom, SINPE y datos</button>
     </div>
     <div data-medidor="alto">${espacioCache && espacioCache.pct >= AVISO_PCT && adminTab !== "al" ? medidorHTML(espacioCache) : ""}</div>
     <div id="tab"></div>
