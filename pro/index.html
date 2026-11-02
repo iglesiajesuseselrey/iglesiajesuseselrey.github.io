@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Iglesia Jesús es el Rey · Pasión por su Presencia</title>
+<meta name="description" content="Iglesia Jesús es el Rey. Cultos en vivo, eventos, Biblia y peticiones de oración, en tu celular.">
+<meta name="theme-color" content="#07052a">
+<link rel="icon" type="image/png" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preload" as="image" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Diseño: presentación cinematográfica de la app de la iglesia. Noche índigo, luz dorada que baja del cielo
+   y el logo de la corona como protagonista. Todo se cuenta al bajar. */
+:root{
+  --noche:#07052a; --noche2:#0e0a45; --indigo:#2419a8; --lila:#8f86ff; --oro:#ffd27a; --oro2:#ffe9b8;
+  --claro:#f5f4ff; --gris:#9c98c4; --gris2:#2a2660; --link:#b3abff;
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Roboto,sans-serif;
+  --script:"Allura","Brush Script MT",cursive;
+  --gl:max(22px,env(safe-area-inset-left,0px)); --gr:max(22px,env(safe-area-inset-right,0px));
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--noche);color:var(--claro);font:400 17px/1.47 var(--f);-webkit-font-smoothing:antialiased;overflow-x:clip;letter-spacing:-.022em}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,p{margin:0}
+img{display:block;max-width:100%}
+.wrap{max-width:1080px;margin:0 auto;padding-left:var(--gl);padding-right:var(--gr)}
+.nav{position:fixed;inset:0 0 auto;z-index:50;height:calc(48px + env(safe-area-inset-top,0px));padding-top:env(safe-area-inset-top,0px);background:rgba(7,5,42,.7);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav .wrap{height:48px;display:flex;align-items:center;gap:26px}
+.marca{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.marca img{height:22px;width:auto}
+.nav .links{display:flex;gap:24px;margin-left:auto;font-size:13px;color:rgba(245,244,255,.82)}
+.nav .links a:hover{color:#fff}
+.nav .cta{font-size:13px;font-weight:600;background:var(--oro);color:#2a1d00;padding:5px 13px;border-radius:999px}
+@media (max-width:760px){.nav .links{display:none}.nav .cta{margin-left:auto}}
+.lnk{color:var(--link);font-size:clamp(17px,2vw,21px);display:inline-flex;align-items:center;gap:4px}
+.lnk::after{content:"›";font-size:1.15em;line-height:1;transition:transform .25s}
+.lnk:hover::after{transform:translateX(3px)}
+.bt{flex:none;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:13px 24px;font-size:17px;font-weight:600;background:var(--oro);color:#2a1d00;transition:filter .25s,transform .25s}
+.bt:hover{filter:brightness(1.08)}
+.bt.gris{background:rgba(255,255,255,.1);color:#fff}
+.bt.waze{background:#33ccff;color:#05222e}
+.escena{position:relative}
+.escena>.fijo{position:sticky;top:0;height:100svh;overflow:hidden}
+.rv{opacity:0;transform:translateY(40px);transition:opacity 1s cubic-bezier(.2,.75,.2,1) var(--d,0s),transform 1s cubic-bezier(.2,.75,.2,1) var(--d,0s)}
+.rv.vis{opacity:1;transform:none}
+@keyframes aparece{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+/* 1. La luz */
+.s-luz{height:270vh}
+#gl{position:absolute;inset:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 20%,var(--indigo),var(--noche) 70%)}
+.s-luz .centro{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:clamp(20px,4vh,40px);padding:60px var(--gr) 0 var(--gl);text-align:center}
+.s-luz .logo{width:min(380px,74vw);filter:drop-shadow(0 0 30px rgba(255,214,130,.55)) drop-shadow(0 0 80px rgba(143,134,255,.5));transform:scale(calc(1 + var(--p,0) * 2.6)) translateY(calc(var(--p,0) * 4vh));opacity:calc(1 - var(--p,0) * 1.4);animation:logoIn 1.8s cubic-bezier(.2,.75,.2,1) both}
+.s-luz .logo img{width:100%;animation:flota 6s ease-in-out 1.8s infinite}
+@keyframes logoIn{from{opacity:0;filter:blur(14px);transform:scale(.85)}}
+@keyframes flota{50%{transform:translateY(-10px)}}
+.s-luz .txt{display:grid;gap:10px;justify-items:center;opacity:calc(1 - var(--p,0) * 3);transform:translateY(calc(var(--p,0) * 60px))}
+.s-luz h1{font-size:clamp(34px,6.4vw,84px);font-weight:200;letter-spacing:-.045em;line-height:1.02;animation:aparece 1.4s .5s both}
+.s-luz h1 b{font-weight:700}
+.s-luz .lema{font:400 clamp(40px,6vw,72px)/1 var(--script);color:var(--oro2);text-shadow:0 0 30px rgba(255,214,130,.45);letter-spacing:0;animation:aparece 1.4s .8s both}
+.s-luz .acc{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin-top:8px;animation:aparece 1.4s 1.1s both}
+.s-luz .velo{position:absolute;inset:0;background:var(--noche);opacity:calc((var(--p,0) - .9) * 10);pointer-events:none}
+.s-luz .bajar{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:50%;translate:-50% 0;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--gris);opacity:calc(1 - var(--p,0) * 6);display:grid;justify-items:center;gap:10px}
+.s-luz .bajar i{width:1px;height:46px;background:linear-gradient(var(--gris),transparent);animation:linea 2s ease-in-out infinite;transform-origin:top}
+@keyframes linea{0%{transform:scaleY(0)}50%{transform:scaleY(1)}100%{transform:scaleY(1);opacity:0}}
+
+/* 2. Tres palabras */
+.s-pal{height:300vh;background:radial-gradient(circle at 50% 55%,#140f5c,var(--noche) 60%)}
+.s-pal .fijo{display:grid;place-items:center}
+.s-pal .pal{position:absolute;font-size:clamp(64px,15vw,220px);font-weight:700;letter-spacing:-.06em;line-height:1;opacity:0;will-change:transform,opacity,filter}
+.s-pal .pal:nth-child(3){background:linear-gradient(95deg,#fff 10%,var(--oro2) 45%,var(--oro) 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.s-pal .nota{position:absolute;bottom:13vh;left:0;right:0;text-align:center;font-size:clamp(17px,2.1vw,22px);color:var(--gris);font-style:italic;padding:0 var(--gr) 0 var(--gl)}
+.s-pal .nota small{display:block;font-style:normal;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--oro);margin-top:8px;font-weight:600}
+
+/* 3. El celular con las funciones */
+.s-cel{height:520vh}
+.s-cel .fijo{display:grid;grid-template-rows:auto 1fr;justify-items:center;padding-top:calc(48px + env(safe-area-inset-top,0px) + 3vh)}
+.s-cel .cab{text-align:center;display:grid;gap:8px;opacity:calc(var(--e,0));transform:translateY(calc((1 - var(--e,0)) * 30px))}
+.s-cel .cab h2{font-size:clamp(36px,6vw,76px);font-weight:700;letter-spacing:-.045em;line-height:1.02}
+.s-cel .cab p{color:var(--gris);font-size:clamp(17px,2vw,21px)}
+.s-cel .zona{position:relative;width:min(1080px,100%);display:grid;place-items:center}
+.cel{position:relative;width:var(--w,300px);aspect-ratio:9/19.3;border-radius:calc(var(--w,300px) * .17);padding:calc(var(--w,300px) * .033);background:linear-gradient(145deg,#3a3a3e,#0d0d0f 40%,#1c1c1f 60%,#4a4a4f);box-shadow:inset 0 0 0 1.5px #5a5a60,inset 0 0 0 4px #0a0a0b,0 50px 100px -40px rgba(143,134,255,.6),0 30px 60px -30px rgba(0,0,0,.9)}
+.cel::before{content:"";position:absolute;z-index:3;top:calc(var(--w,300px) * .065);left:50%;translate:-50% 0;width:31%;height:calc(var(--w,300px) * .09);border-radius:99px;background:#000}
+.cel .pant{position:relative;width:100%;height:100%;border-radius:calc(var(--w,300px) * .14);overflow:hidden;background:#000}
+.cel .pant img{width:100%;height:100%;object-fit:cover;object-position:top}
+.cel .brillo{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.14),transparent 30%,transparent 70%,rgba(255,255,255,.05));z-index:2}
+.s-cel .celw{--w:min(300px,60vw,calc((100svh - 300px) / 2.15));transform:translateY(calc((1 - var(--e,0)) * 60vh)) rotate(calc((1 - var(--e,0)) * -8deg))}
+.s-cel .aura{position:absolute;width:min(700px,120vw);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(255,214,130,.22),rgba(143,134,255,.12) 35%,transparent 62%);opacity:var(--e,0);pointer-events:none}
+.fun{position:absolute;width:min(270px,26vw);display:grid;gap:6px;opacity:0;transform:translateY(16px);transition:opacity .7s,transform .8s cubic-bezier(.2,.75,.2,1)}
+.fun.on{opacity:1;transform:none}
+.fun .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,var(--indigo),var(--lila));box-shadow:0 10px 24px -10px var(--lila)}
+.fun .ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fun b{font-size:20px;font-weight:700;letter-spacing:-.025em}
+.fun span{color:var(--gris);font-size:15px;line-height:1.4}
+.fun.iz{right:calc(50% + var(--w2,180px) + 40px);text-align:right;justify-items:end}
+.fun.de{left:calc(50% + var(--w2,180px) + 40px)}
+.fun::after{content:"";position:absolute;top:22px;width:40px;height:1px;background:linear-gradient(90deg,var(--oro),transparent)}
+.fun.iz::after{right:-50px;transform:scaleX(-1)}
+.fun.de::after{left:-50px}
+.f1{top:12%}.f2{top:42%}.f3{top:72%}
+@media (max-width:860px){
+  .fun{left:var(--gl)!important;right:var(--gr)!important;width:auto;top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center!important;justify-items:center!important;background:rgba(14,10,69,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:14px 16px}
+  .fun::after{display:none}
+  .fun .ic{width:38px;height:38px}
+  .fun b{font-size:18px}.fun span{font-size:14px}
+}
+
+/* 4. Versículo que se ilumina */
+.s-verso{height:240vh}
+.s-verso .fijo{display:grid;place-items:center;text-align:center}
+.s-verso p{font-size:clamp(40px,7.4vw,104px);line-height:1.06;font-weight:700;letter-spacing:-.05em;max-width:14ch;margin:0 auto}
+.s-verso p span{color:#1d1956;transition:color .4s}
+.s-verso p span.on{color:var(--claro)}
+.s-verso p span.oro.on{background:linear-gradient(95deg,var(--oro2),var(--oro));-webkit-background-clip:text;background-clip:text;color:transparent}
+.s-verso small{display:block;margin-top:28px;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--oro);font-weight:600;opacity:var(--r,0)}
+
+/* 5. Anillo de la comunidad */
+.s-anillo{height:420vh;background:radial-gradient(ellipse at 50% 60%,#120d52,var(--noche) 65%)}
+.s-anillo .fijo{display:grid;grid-template-rows:auto 1fr;justify-items:center;padding-top:calc(48px + env(safe-area-inset-top,0px) + 4vh)}
+.s-anillo .cab{text-align:center;display:grid;gap:8px;padding:0 var(--gr) 0 var(--gl)}
+.s-anillo .cab h2{font-size:clamp(34px,5.6vw,70px);font-weight:700;letter-spacing:-.045em;line-height:1.03}
+.s-anillo .cab p{color:var(--gris);font-size:clamp(16px,2vw,20px)}
+.escenario{position:relative;width:100%;display:grid;place-items:center;perspective:1500px;perspective-origin:50% 30%}
+.anillo{position:relative;width:var(--cw);height:calc(var(--cw) * 1.25);transform-style:preserve-3d;--cw:min(220px,42vw);--R:calc(var(--cw) * 1.45)}
+.tarj{position:absolute;inset:0;border-radius:24px;padding:22px;display:grid;align-content:space-between;background:linear-gradient(160deg,rgba(143,134,255,.28),rgba(14,10,69,.92) 55%);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 60px -30px rgba(0,0,0,.8);transform:rotateY(calc(var(--i) * 45deg)) translateZ(var(--R));backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.tarj svg{width:40px;height:40px;stroke:var(--oro);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tarj b{font-size:clamp(18px,2.2vw,22px);font-weight:700;letter-spacing:-.025em;line-height:1.15}
+.tarj span{color:var(--gris);font-size:14px;line-height:1.35;display:block;margin-top:6px}
+.piso{position:absolute;bottom:12%;width:min(700px,110vw);height:120px;background:radial-gradient(ellipse,rgba(255,214,130,.18),transparent 70%);filter:blur(8px);pointer-events:none}
+
+/* 6. Visítanos */
+.visita{background:var(--claro);color:#18144a;padding:clamp(90px,14vw,160px) 0;text-align:center}
+.visita h2{font-size:clamp(52px,10vw,130px);font-weight:800;letter-spacing:-.06em;line-height:.95}
+.visita h2 em{font:400 1.05em/1 var(--script);letter-spacing:0;color:#3524c4;font-style:normal}
+.visita p{color:#5a5784;font-size:clamp(18px,2.2vw,23px);margin:18px auto 0;max-width:32ch;font-weight:500}
+.visita .mapa{margin:clamp(40px,6vw,60px) auto 0;max-width:900px;border-radius:28px;overflow:hidden;box-shadow:0 40px 80px -40px rgba(53,36,196,.6);background:#e7e4ff}
+.visita iframe{display:block;width:100%;height:clamp(280px,40vw,420px);border:0}
+.visita .acc{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.visita .bt{background:#3524c4;color:#fff}
+.visita .bt.waze{background:#33ccff;color:#05222e}
+
+/* 7. Cierre */
+.cierre{padding:clamp(110px,16vw,190px) 0 clamp(90px,12vw,140px);text-align:center;position:relative;overflow:hidden}
+.cierre::before{content:"";position:absolute;left:50%;top:-30%;width:120vmax;height:90vmax;translate:-50% 0;background:repeating-conic-gradient(from 0deg at 50% 0%,rgba(255,214,130,.07) 0 4deg,transparent 4deg 12deg);-webkit-mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 65%);mask-image:radial-gradient(ellipse at 50% 0%,#000,transparent 65%);pointer-events:none}
+.cierre .wrap{position:relative;display:grid;gap:22px;justify-items:center}
+.cierre img{width:min(200px,46vw);filter:drop-shadow(0 0 30px rgba(255,214,130,.5))}
+.cierre h2{font-size:clamp(52px,11vw,150px);line-height:.95;font-weight:800;letter-spacing:-.06em;background:linear-gradient(180deg,#fff 30%,#6f68b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cierre p{font-size:clamp(19px,2.4vw,24px);color:var(--gris);font-weight:500;max-width:32ch}
+.cierre .acc{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+footer{border-top:1px solid var(--gris2);padding:28px 0 calc(34px + env(safe-area-inset-bottom,0px));font-size:12.5px;color:var(--gris)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between}
+footer a:hover{color:var(--claro);text-decoration:underline}
+@media (prefers-reduced-motion:reduce){.s-luz,.s-pal,.s-cel,.s-verso,.s-anillo{height:auto}.escena>.fijo{position:relative;height:auto;min-height:100svh}.s-pal .pal{position:relative;opacity:1}.fun{position:relative;opacity:1}.rv{opacity:1;transform:none}*{animation:none!important}}
+</style>
+</head>
+<body>
+<nav class="nav" aria-label="Principal"><div class="wrap">
+  <a class="marca" href="#top"><img src="logo.png" alt="">Jesús es el Rey</a>
+  <div class="links"><a href="#app">La app</a><a href="#comunidad">Comunidad</a><a href="#visitanos">Visítanos</a><a href="../">Abrir la app</a></div>
+  <a class="cta" href="../">Entrar</a>
+</div></nav>
+
+<main id="top">
+  <!-- 1 -->
+  <section class="escena s-luz" data-esc aria-labelledby="t1"><div class="fijo">
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <div class="centro">
+      <div class="logo"><img src="logo.png" alt="Logo de la Iglesia Jesús es el Rey"></div>
+      <div class="txt"><h1 id="t1">Iglesia <b>Jesús es el Rey</b></h1><div class="lema">Pasión por su Presencia</div>
+        <div class="acc"><a class="lnk" href="#app">Conocer la app</a><a class="lnk" href="../">Entrar</a></div></div>
+    </div>
+    <div class="bajar" aria-hidden="true">Baja<i></i></div>
+    <div class="velo" aria-hidden="true"></div>
+  </div></section>
+
+  <!-- 2 -->
+  <section class="escena s-pal" data-esc aria-label="Fe, esperanza y caridad"><div class="fijo">
+    <span class="pal">Fe.</span><span class="pal">Esperanza.</span><span class="pal">Caridad.</span>
+    <p class="nota" id="notaPal">“Y ahora permanecen la fe, la esperanza, y la caridad, estas tres.”<small>1 Corintios 13:13 · RV 1909</small></p>
+  </div></section>
+
+  <!-- 3 -->
+  <section class="escena s-cel" id="app" data-esc aria-label="La app de la iglesia"><div class="fijo">
+    <div class="cab"><h2>Tu iglesia.<br>En tu bolsillo.</h2><p>Todo lo que necesitas para vivir tu fe durante la semana.</p></div>
+    <div class="zona">
+      <div class="aura" aria-hidden="true"></div>
+      <div class="celw"><div class="cel"><div class="pant"><img src="app.jpg" alt="La app de la Iglesia Jesús es el Rey en un celular"></div><div class="brillo"></div></div></div>
+      <div class="fun iz f1"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span><b>Cultos en vivo</b><span>Facebook Live y Zoom, a un toque desde tu casa.</span></div>
+      <div class="fun de f1"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg></span><b>Peticiones de oración</b><span>Anónimas o con tu nombre. Llegan directo a los pastores.</span></div>
+      <div class="fun iz f2"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M12 6.5v5M9.5 9h5"/></svg></span><b>La Biblia completa</b><span>Lee cualquier libro y capítulo, cuando quieras.</span></div>
+      <div class="fun de f2"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><b>Eventos</b><span>Agrégalos a tu calendario y compártelos por WhatsApp.</span></div>
+      <div class="fun iz f3"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18h4"/><path d="M12 7v6M9.5 9.5 12 7l2.5 2.5"/></svg></span><b>Ofrendas por SINPE</b><span>Da tu ofrenda desde el celular, de forma sencilla.</span></div>
+      <div class="fun de f3"><span class="ic"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/></svg></span><b>Se instala como app</b><span>Con el ícono de la iglesia en tu pantalla de inicio.</span></div>
+    </div>
+  </div></section>
+
+  <!-- 4 -->
+  <section class="escena s-verso" data-esc aria-label="Salmos 23:1"><div class="fijo"><div class="wrap">
+    <p id="verso">Jehová es mi pastor; <span class="oro">nada</span> <span class="oro">me</span> <span class="oro">faltará.</span></p><small>Salmos 23:1 · RV 1909</small>
+  </div></div></section>
+
+  <!-- 5 -->
+  <section class="escena s-anillo" id="comunidad" data-esc aria-label="Lo que encuentras en la app"><div class="fijo">
+    <div class="cab"><h2>Una familia que se encuentra.</h2><p>Durante toda la semana, no solo el domingo.</p></div>
+    <div class="escenario"><div class="piso" aria-hidden="true"></div><div class="anillo" id="anillo">
+      <div class="tarj" style="--i:0"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4"/></svg><div><b>En vivo</b><span>Los cultos donde estés.</span></div></div>
+      <div class="tarj" style="--i:1"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><div><b>Eventos</b><span>Lo que viene en la iglesia.</span></div></div>
+      <div class="tarj" style="--i:2"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg><div><b>Oración</b><span>Oramos por ti.</span></div></div>
+      <div class="tarj" style="--i:3"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><div><b>Da gracias</b><span>Lo compartimos el domingo.</span></div></div>
+      <div class="tarj" style="--i:4"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg><div><b>Biblia</b><span>La Palabra siempre contigo.</span></div></div>
+      <div class="tarj" style="--i:5"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M21 17l-5-5-7 7"/></svg><div><b>Fotos y videos</b><span>Lo que vivimos juntos.</span></div></div>
+      <div class="tarj" style="--i:6"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 16V10M12 16V6M17 16v-4"/></svg><div><b>Encuestas</b><span>Tu opinión cuenta.</span></div></div>
+      <div class="tarj" style="--i:7"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg><div><b>Ubicación</b><span>Llega con Maps o Waze.</span></div></div>
+    </div></div>
+  </div></section>
+
+  <!-- 6 -->
+  <section class="visita" id="visitanos"><div class="wrap">
+    <h2 class="rv">Te <em>esperamos.</em></h2>
+    <p class="rv" style="--d:.1s">Hay un lugar para ti en esta familia. Ven tal como eres.</p>
+    <div class="mapa rv" style="--d:.2s"><iframe src="https://maps.google.com/maps?q=9.990710,-84.041760&z=16&output=embed" title="Mapa de la ubicación de la iglesia" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <div class="acc rv" style="--d:.25s"><a class="bt" href="https://www.google.com/maps/search/?api=1&query=9.990710,-84.041760" target="_blank" rel="noopener">Abrir en Google Maps</a><a class="bt waze" href="https://waze.com/ul?ll=9.990710,-84.041760&navigate=yes" target="_blank" rel="noopener">Ir con Waze</a></div>
+  </div></section>
+
+  <!-- 7 -->
+  <section class="cierre"><div class="wrap">
+    <img class="rv" src="logo.png" alt="">
+    <h2 class="rv" style="--d:.08s">Entra.<br>Hay lugar para ti.</h2>
+    <p class="rv" style="--d:.16s">Abre la app de la iglesia, mira los próximos eventos o déjanos tu petición de oración.</p>
+    <div class="acc rv" style="--d:.24s"><a class="bt" href="../">Abrir la app</a><a class="bt gris" href="../#oracion">Pedir oración</a></div>
+  </div></section>
+</main>
+<footer><div class="wrap">
+  <span>© <span id="anio">2026</span> Iglesia Jesús es el Rey · Pasión por su Presencia</span>
+  <a href="https://rbmsolutionscr.com" target="_blank" rel="noopener">Elaborado por RBM Solutions CR</a>
+</div></footer>
+
+<script>
+(() => {
+  "use strict";
+  const QUIETO = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  $("#anio").textContent = new Date().getFullYear();
+  const lim = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), tramo = (p, a, b) => lim((p - a) / (b - a)), suave = t => t * t * (3 - 2 * t);
+
+  /* ---------- Luz que baja del cielo (WebGL, sin librerías) ---------- */
+  const luz = (() => {
+    const cv = $("#gl"), gl = cv.getContext("webgl", { alpha: false, antialias: false }); if (!gl) return null;
+    const VS = "attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}";
+    const FS = `precision highp float;uniform vec2 uR;uniform float uT;uniform float uP;uniform vec2 uM;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      void main(){vec2 uv=(gl_FragCoord.xy-.5*uR)/uR.y;vec2 src=vec2(uM.x*.08,.62+uM.y*.04);vec2 d=uv-src;float r=length(d);float an=atan(d.x,-d.y);
+        float rays=pow(.5+.5*sin(an*16.+uT*.12+sin(an*5.-uT*.08)*1.6),4.)*.6+pow(.5+.5*sin(an*29.-uT*.07),6.)*.4;
+        float caida=smoothstep(1.9,.0,r)*smoothstep(-.2,.35,-d.y+.25);
+        float glow=exp(-r*(2.4-uP*1.2));
+        vec3 noche=vec3(.027,.02,.165),indigo=vec3(.141,.098,.66),oro=vec3(1.,.86,.55),blanco=vec3(1.,.98,.92);
+        vec3 c=mix(noche,indigo,smoothstep(1.5,.0,r)*.9);
+        c+=oro*rays*caida*(.16+uP*.5);
+        c+=mix(oro,blanco,.4)*glow*(.35+uP*1.4);
+        vec2 g=uv*vec2(26.,26.)+vec2(0.,uT*.35);vec2 id=floor(g);vec2 f=fract(g)-.5;float hs=h(id);vec2 o=vec2(h(id+1.3),h(id+7.1))-.5;
+        float polvo=smoothstep(.07,.0,length(f-o*.7))*step(.86,hs)*(.4+.6*sin(uT*1.6+hs*40.))*smoothstep(1.4,.2,r);
+        c+=oro*max(polvo,0.)*.9;
+        c=mix(c,blanco,smoothstep(.55,.85,uP));
+        gl_FragColor=vec4(c,1.);}`;
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw 0; return o; };
+    let pr; try { pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw 0; } catch { return null; }
+    gl.useProgram(pr);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const a = gl.getAttribLocation(pr, "a"); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+    const uR = gl.getUniformLocation(pr, "uR"), uT = gl.getUniformLocation(pr, "uT"), uP = gl.getUniformLocation(pr, "uP"), uM = gl.getUniformLocation(pr, "uM");
+    let p = 0, vis = true, mx = 0, my = 0, sx = 0, sy = 0;
+    const tam = () => { const d = Math.min(1.5, devicePixelRatio || 1); cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; gl.viewport(0, 0, cv.width, cv.height); };
+    addEventListener("resize", tam); tam();
+    addEventListener("pointermove", e => { mx = e.clientX / innerWidth - .5; my = .5 - e.clientY / innerHeight; }, { passive: true });
+    const t0 = performance.now();
+    const cuadro = now => { if (vis && !document.hidden) { sx += (mx - sx) * .04; sy += (my - sy) * .04;
+        gl.uniform2f(uR, cv.width, cv.height); gl.uniform1f(uT, QUIETO ? 0 : (now - t0) / 1000); gl.uniform1f(uP, p); gl.uniform2f(uM, sx, sy); gl.drawArrays(gl.TRIANGLES, 0, 3); }
+      requestAnimationFrame(cuadro); };
+    requestAnimationFrame(cuadro);
+    if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => vis = e.isIntersecting).observe(cv);
+    return { set p(v) { p = v; } };
+  })();
+
+  /* ---------- Escenas ---------- */
+  const esc = $$("[data-esc]"), pals = $$(".s-pal .pal"), nota = $("#notaPal");
+  const funs = $$(".fun"), ordenF = [0, 1, 2, 3, 4, 5], celSec = $(".s-cel");
+  const verso = (() => { const p = $("#verso"), out = [];
+    [...p.childNodes].forEach(n => { const oro = n.nodeType === 1; const partes = n.textContent.split(/(\s+)/).map(t => { if (!t.trim()) return document.createTextNode(t); const s = document.createElement("span"); s.textContent = t; if (oro) s.className = "oro"; out.push(s); return s; }); n.replaceWith(...partes); });
+    return out; })();
+  const tarjs = $$(".tarj"), anillo = $("#anillo");
+  const prog = s => { const r = s.getBoundingClientRect(), l = s.offsetHeight - innerHeight; return lim(-r.top / (l || 1)); };
+  const pinta = () => {
+    esc.forEach(s => { const p = prog(s); s.style.setProperty("--p", p.toFixed(4));
+      if (s.classList.contains("s-luz") && luz) luz.p = p;
+      if (s.classList.contains("s-pal")) { const n = pals.length;
+        pals.forEach((w, i) => { const t = tramo(p, i / n, (i + 1) / n), ent = suave(tramo(t, 0, .35)), sal = i === n - 1 ? 0 : suave(tramo(t, .7, 1));
+          w.style.opacity = (ent * (1 - sal)).toFixed(3); w.style.transform = `scale(${(1.5 - ent * .5 + sal * .6).toFixed(3)})`; w.style.filter = `blur(${((1 - ent) * 20 + sal * 16).toFixed(1)}px)`; });
+        nota.style.opacity = tramo(p, .75, .9).toFixed(3); }
+      if (s === celSec) { const e = suave(tramo(p, 0, .18)); s.style.setProperty("--e", e.toFixed(4));
+        const ancho = innerWidth > 860, k = p < .2 ? -1 : Math.floor(tramo(p, .2, .98) * (ancho ? 3 : 6));
+        funs.forEach((f, i) => { const on = ancho ? (k >= 0 && Math.floor(i / 2) <= k) : i === k; f.classList.toggle("on", on); });
+        const w = Math.min(300, innerWidth * .6, (innerHeight - 300) / 2.15); s.style.setProperty("--w2", (w / 2) + "px"); }
+      if (s.classList.contains("s-verso")) { const n = Math.round(verso.length * tramo(p, .05, .8)); verso.forEach((w, i) => w.classList.toggle("on", i < n)); s.style.setProperty("--r", tramo(p, .8, .95).toFixed(3)); }
+      if (s.classList.contains("s-anillo")) { const ang = -suave(tramo(p, .05, .95)) * 315;
+        anillo.style.transform = `rotateX(-8deg) rotateY(${ang.toFixed(2)}deg)`;
+        tarjs.forEach((t, i) => { let a = ((i * 45 + ang) % 360 + 360) % 360; if (a > 180) a -= 360; const f = Math.cos(a * Math.PI / 180); t.style.opacity = (.15 + .85 * Math.max(0, f) ** 1.5).toFixed(3); }); }
+    });
+  };
+  let pend = false;
+  addEventListener("scroll", () => { if (!pend) { pend = true; requestAnimationFrame(() => { pend = false; pinta(); }); } }, { passive: true });
+  addEventListener("resize", pinta); pinta();
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("vis"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -10% 0px", threshold: .1 }) : null;
+  $$(".rv").forEach(el => io ? io.observe(el) : el.classList.add("vis"));
+})();
+</script>
+</body>
+</html>
