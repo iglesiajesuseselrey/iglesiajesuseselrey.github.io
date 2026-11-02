@@ -612,6 +612,8 @@ html{scroll-behavior:smooth}
 #fuegos5{position:absolute;inset:0;z-index:1;pointer-events:none;width:100%;height:100%}
 .hero .wrap{position:relative;z-index:2}
 .prox3{cursor:pointer;transition:transform .25s,box-shadow .3s}
+details.ev.brilla5{animation:brilla5 2.4s ease-out}
+@keyframes brilla5{0%,30%{box-shadow:0 0 0 3px rgba(255,214,130,.95),0 0 40px rgba(255,214,130,.55)}100%{box-shadow:0 0 0 0 rgba(255,214,130,0)}}
 .prox3:hover{transform:translateY(-2px);box-shadow:0 18px 40px -18px rgba(255,214,130,.6)}
 .prox3:active{transform:scale(.98)}
 .toca5{font-size:12px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.75);display:flex;gap:6px;align-items:center;animation:toca5 2.6s ease-in-out infinite}
@@ -1156,7 +1158,7 @@ function dateBox(e){
 }
 function evPublicHTML(e){
   const hay = e.hora || e.lugar || e.desc;
-  return `<details class="ev"><summary>${dateBox(e)}
+  return `<details class="ev" data-ev="${esc(e.id)}"><summary>${dateBox(e)}
     <div><h3>${esc(e.titulo)}</h3>${e.repite==="semanal"?`<span class="sub" style="font-size:13px;font-weight:700">${esc(cuandoTexto(e))}</span>`:""}</div><span class="chev" aria-hidden="true">›</span></summary>
     <div class="more">${e.imagen?`<img class="evimg" data-foto="${esc(e.imagen)}" alt="Imagen del evento ${esc(e.titulo)}">`:""}<div class="info"><span>📅 ${esc(cuandoTexto(e))}</span></div><div class="info">${e.hora?`<span>🕒 ${esc(hora12(e.hora))}</span>`:""}${e.lugar?`<span>📍 ${esc(e.lugar)}</span>`:""}</div>${e.desc?`<p>${esc(e.desc)}</p>`:""}${hay?"":`<p class="sub">Pronto daremos más detalles.</p>`}
       <div class="tools evtools"><button type="button" class="btn small" data-cal="${esc(e.id)}">📅 Agregar al calendario</button>${e.repite!=="semanal"&&e.fecha?`<a class="btn small wa" href="${waEvento(e)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>`:""}</div></div></details>`;
@@ -2688,7 +2690,7 @@ function iniciarFuegos(){
   hero.addEventListener("pointerdown", e => {
     if (e.target.closest("a,button,input,textarea,select")) return;
     const r = hero.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-    if (e.target.closest("#prox3")) { fuegos5.show(); return; }
+    if (e.target.closest("#prox3")) { fuegos5.show(); irAlEvento5(); return; }
     Math.random() < .5 ? estallar(x, y) : cohete(x, y);
   });
 }
@@ -2697,10 +2699,24 @@ let reloj5Ant = [];
 const _pintarReloj5 = pintarReloj3;
 pintarReloj3 = function(){ _pintarReloj5(); const sp = [...document.querySelectorAll("#prox3 .reloj3 span")];
   sp.forEach((el, i) => { const v = el.textContent; if (reloj5Ant[i] !== undefined && reloj5Ant[i] !== v) el.classList.add("late"); reloj5Ant[i] = v; }); };
+// tocar el reloj lleva al evento: baja hasta él, lo abre y lo resalta
+function irAlEvento5(){
+  const p = $("#prox3")?._p; if (!p) return;
+  setTimeout(() => {
+    const el = document.querySelector(`details.ev[data-ev="${CSS.escape(p.e.id || "")}"]`) || $("#eventos");
+    if (!el) return;
+    if (el.tagName === "DETAILS") el.open = true;
+    el.scrollIntoView({ behavior: QUIETO ? "auto" : "smooth", block: "center" });
+    el.classList.remove("brilla5"); void el.offsetWidth; el.classList.add("brilla5");
+  }, QUIETO ? 0 : 650);
+}
 function mejorar5(){
   if (view !== "public") return;
   iniciarFuegos();
-  const p = $("#prox3"); if (p && !p.querySelector(".toca5") && !QUIETO) p.insertAdjacentHTML("beforeend", `<span class="toca5">✨ Toca el reloj o la pantalla</span>`);
+  const p = $("#prox3"); if (p && !p.hasAttribute("tabindex")) { p.setAttribute("role", "button"); p.setAttribute("tabindex", "0"); p.setAttribute("aria-label", "Ver el próximo evento");
+    p.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fuegos5?.show(); irAlEvento5(); } });
+    if (QUIETO) p.addEventListener("click", irAlEvento5); }
+  if (p && !p.querySelector(".toca5") && !QUIETO) p.insertAdjacentHTML("beforeend", `<span class="toca5">✨ Toca el reloj para ver el evento</span>`);
   if (!sessionStorage.getItem("fuegos5")) { try { sessionStorage.setItem("fuegos5", "1"); } catch {}
     const lanzar = () => setTimeout(() => fuegos5 && fuegos5.show(), 500), intro = $(".intro4");
     if (intro) { const obs = new MutationObserver(() => { if (!document.body.contains(intro) || intro.classList.contains("fuera")) { obs.disconnect(); lanzar(); } }); obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] }); }
