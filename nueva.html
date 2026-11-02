@@ -524,6 +524,90 @@ details.ev .more{animation:abre3 .35s ease}
 .vimg3 img{width:100%;border-radius:16px;box-shadow:0 30px 60px -20px #000}
 .vimg3 .tools{justify-content:center}
 @media (prefers-reduced-motion:reduce){.hero .cruz path{stroke-dashoffset:0}.hero .nubes i,.done .ring{animation:none}}
+/* ===================== Versión 4: entrada, palabra para ti, galería y panel animado ===================== */
+/* entrada */
+.intro4{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow:hidden;cursor:pointer;background:radial-gradient(ellipse at 50% 30%,#2c20c4,#0b0840 70%);clip-path:inset(0 0 0 0);transition:clip-path 1s cubic-bezier(.7,0,.2,1)}
+.intro4.fuera{clip-path:inset(0 0 100% 0)}
+.intro4::before{content:"";position:absolute;left:50%;top:38%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(rgba(255,227,163,.09) 0 5deg,transparent 5deg 15deg);-webkit-mask-image:radial-gradient(circle,#000,transparent 42%);mask-image:radial-gradient(circle,#000,transparent 42%);animation:rayos 40s linear infinite,abre4 1.4s cubic-bezier(.2,.7,.2,1) both}
+.intro4 div{position:relative;display:grid;justify-items:center;gap:10px;text-align:center;padding:24px;color:#fff;transition:opacity .4s,transform 1s cubic-bezier(.7,0,.2,1)}
+.intro4.fuera div{opacity:0;transform:translateY(-70px)}
+.intro4 img{width:min(220px,58vw);filter:drop-shadow(0 0 30px rgba(255,214,130,.7));animation:logo4 1.3s cubic-bezier(.2,1.2,.4,1) both}
+.intro4 b{font:900 clamp(20px,5.4vw,34px) var(--font-display);text-transform:uppercase;letter-spacing:.04em;animation:sube .8s .45s cubic-bezier(.2,.7,.2,1) both}
+.intro4 i{font:400 clamp(34px,8vw,52px)/1 var(--font-script);font-style:normal;color:var(--oro2);animation:sube .8s .7s cubic-bezier(.2,.7,.2,1) both;text-shadow:0 0 24px rgba(255,214,130,.5)}
+@keyframes abre4{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes logo4{from{opacity:0;transform:scale(.6);filter:blur(12px) drop-shadow(0 0 0 transparent)}to{opacity:1;transform:none}}
+/* palabra para ti */
+.palabra4{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:26px;align-items:center}
+@media (max-width:760px){.palabra4{grid-template-columns:1fr}}
+.carta4{perspective:1200px;min-height:300px;cursor:pointer}
+.carta4 .in{position:relative;height:100%;min-height:300px;transform-style:preserve-3d;transition:transform .9s cubic-bezier(.3,1.3,.4,1)}
+.carta4.vuelta .in{transform:rotateY(180deg)}
+.carta4 .cara{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:26px;display:grid;place-items:center;text-align:center;padding:28px 24px;overflow:hidden;color:#fff;background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));box-shadow:0 30px 60px -30px rgba(17,12,92,.8)}
+.carta4 .cara::before{content:"";position:absolute;inset:-40%;background:repeating-conic-gradient(rgba(255,227,163,.07) 0 6deg,transparent 6deg 18deg);animation:rayos 60s linear infinite}
+.carta4 .cara>*{position:relative}
+.carta4 .frente svg{width:70px;height:70px;fill:none;stroke:var(--oro2);stroke-width:1.4;filter:drop-shadow(0 0 14px rgba(255,214,130,.6));animation:flotaLogo 4s ease-in-out infinite}
+.carta4 .frente b{display:block;font:800 20px var(--font-display);margin-top:12px}
+.carta4 .frente small{display:block;opacity:.75;margin-top:4px;font-weight:700}
+.carta4 .atras{transform:rotateY(180deg)}
+.carta4 .atras q{quotes:"“" "”";font-style:italic;font-size:clamp(18px,3.4vw,23px);line-height:1.5;text-wrap:balance}
+.carta4 .atras small{display:block;margin-top:14px;color:var(--oro2);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:13px}
+.palabra4 .tools{gap:10px}
+/* lo que vivimos */
+.vivimos4{display:grid;grid-auto-flow:column;grid-auto-columns:min(78%,320px);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 14px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.vivimos4::-webkit-scrollbar{display:none}
+.vivimos4 button{scroll-snap-align:start;position:relative;border:0;padding:0;border-radius:22px;overflow:hidden;aspect-ratio:4/5;background:radial-gradient(ellipse at 50% 0%,var(--hero2),var(--hero1));cursor:pointer;text-align:left;color:#fff;font:inherit;box-shadow:0 20px 40px -26px rgba(17,12,92,.7);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+.vivimos4 button:hover{transform:translateY(-4px)}
+.vivimos4 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.vivimos4 button:hover img{transform:scale(1.06)}
+.vivimos4 span{position:absolute;left:0;right:0;bottom:0;padding:46px 16px 16px;background:linear-gradient(transparent,rgba(8,5,40,.88));display:grid;gap:2px}
+.vivimos4 b{font:800 18px/1.2 var(--font-display)}
+.vivimos4 small{opacity:.8;font-weight:700;font-size:12.5px}
+.vivimos4 .play4{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.9);display:grid;place-items:center}
+/* adorno entre secciones */
+.adorno4{display:flex;align-items:center;gap:14px;justify-content:center;color:var(--oro);opacity:.7;margin:-20px 0}
+.adorno4::before,.adorno4::after{content:"";height:1px;width:min(30%,160px);background:linear-gradient(90deg,transparent,currentColor)}
+.adorno4::after{transform:scaleX(-1)}
+.adorno4 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6}
+/* toque dorado */
+.toque4{position:fixed;z-index:2147482500;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;pointer-events:none;border:2px solid var(--oro);background:color-mix(in srgb,var(--oro) 30%,transparent)}
+
+/* ===== paneles del equipo (administración, pastores, músicos) ===== */
+.adminbar{background:linear-gradient(110deg,#0b0840,#2419a8,#3524c4,#2419a8,#0b0840);background-size:300% 100%;animation:barra4 14s ease-in-out infinite;box-shadow:0 10px 30px -18px rgba(17,12,92,.8)}
+.adminbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--oro2),transparent);background-size:50% 100%;background-repeat:no-repeat;animation:linea4 4s linear infinite}
+.adminbar .wrap>b{display:inline-flex;align-items:center;gap:10px}
+.adminbar .wrap>b img{height:30px;width:auto;filter:drop-shadow(0 0 8px rgba(255,214,130,.5))}
+@keyframes barra4{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+@keyframes linea4{from{background-position:-50% 0}to{background-position:150% 0}}
+.hola4{position:relative;overflow:hidden;border-radius:22px;padding:20px;color:#fff;background:radial-gradient(400px 220px at 100% 0%,rgba(255,214,130,.25),transparent 70%),radial-gradient(ellipse at 0% 0%,var(--hero2),var(--hero1));box-shadow:0 24px 50px -30px rgba(17,12,92,.9);animation:entra4 .6s cubic-bezier(.2,.7,.2,1) both}
+.hola4::after{content:"";position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:repeating-conic-gradient(rgba(255,227,163,.12) 0 6deg,transparent 6deg 18deg);animation:rayos 50s linear infinite;pointer-events:none}
+.hola4 small{display:block;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--oro2)}
+.hola4 b{display:block;font:800 clamp(21px,5vw,28px)/1.15 var(--font-display);margin-top:4px}
+.hola4 p{margin:6px 0 0;opacity:.85;font-size:14.5px;max-width:52ch;position:relative;z-index:1}
+.kpi4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:-6px}
+@media (max-width:560px){.kpi4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi4>*{position:relative;overflow:hidden;display:grid;gap:2px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;color:var(--ink);font:inherit;animation:entra4 .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+button.kpi4i{cursor:pointer;transition:transform .2s,box-shadow .25s,border-color .25s}
+button.kpi4i:hover{transform:translateY(-3px);border-color:var(--k);box-shadow:0 14px 28px -18px var(--k)}
+.kpi4>*::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--k,var(--accent))}
+.kpi4 b{font:900 28px/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.kpi4 span{font-size:12.5px;color:var(--muted);font-weight:700;line-height:1.3}
+.tabs button{transition:background .3s,color .3s,border-color .3s,transform .2s,box-shadow .3s}
+.tabs button:hover{transform:translateY(-1px);border-color:var(--accent)}
+.tabs button[aria-pressed=true]{box-shadow:0 8px 20px -10px var(--accent)}
+.an4{animation:entra4 .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 55ms)}
+@keyframes entra4{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.req,.panel,details.song,.gcard{transition:transform .25s,box-shadow .3s,border-color .3s}
+.req:hover,details.song:hover{transform:translateY(-2px);box-shadow:0 16px 34px -24px color-mix(in srgb,var(--accent) 70%,transparent);border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.tag.nueva{animation:pulse 1.6s ease-in-out infinite}
+.modal{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fondo4 .25s ease both}
+.modal .sheet{animation:hoja4 .45s cubic-bezier(.2,1.1,.3,1) both;box-shadow:0 30px 70px -20px rgba(0,0,0,.6)}
+@keyframes fondo4{from{opacity:0}}
+@keyframes hoja4{from{opacity:0;transform:translateY(30px) scale(.96)}}
+.toast{animation:toast4 .35s cubic-bezier(.2,1.2,.4,1) both;box-shadow:0 16px 30px -12px rgba(0,0,0,.5)}
+@keyframes toast4{from{opacity:0;transform:translate(-50%,20px) scale(.9)}}
+.drawer .menulist>*{animation:entra4 .45s cubic-bezier(.2,.7,.2,1) both}
+.drawer .menulist>*:nth-child(2){animation-delay:.04s}.drawer .menulist>*:nth-child(3){animation-delay:.08s}.drawer .menulist>*:nth-child(4){animation-delay:.12s}.drawer .menulist>*:nth-child(5){animation-delay:.16s}.drawer .menulist>*:nth-child(6){animation-delay:.2s}.drawer .menulist>*:nth-child(7){animation-delay:.24s}.drawer .menulist>*:nth-child(n+8){animation-delay:.28s}
+@media (prefers-reduced-motion:reduce){.intro4{display:none}.an4,.kpi4>*,.hola4{animation:none}}
 </style>
 <script>
 /* Aviso para instalar la app en el celular */
@@ -2408,6 +2492,95 @@ new MutationObserver(() => { const d = document.querySelector("#pcard .done"); i
   .observe(document.body, { childList: true, subtree: true });
 const _renderPublic2 = renderPublic;
 renderPublic = function(){ _renderPublic2(); mejorar3(); };
+
+/* ===================== Versión 4: entrada, palabra para ti, galería y paneles animados ===================== */
+// entrada con el logo (una vez por visita)
+(() => { let ya = false; try { ya = sessionStorage.getItem("ig4-intro") === "1"; sessionStorage.setItem("ig4-intro", "1"); } catch {}
+  if (ya || QUIETO) return;
+  const el = document.createElement("div"); el.className = "intro4"; el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `<div><img src="${LOGO}" alt=""><b>${esc(DEFAULT.iglesia)}</b><i>${esc(DEFAULT.lema)}</i></div>`;
+  document.body.append(el);
+  const fin = () => { if (el.classList.contains("fuera")) return; el.classList.add("fuera"); setTimeout(() => el.remove(), 1100); };
+  el.addEventListener("click", fin); setTimeout(fin, 2400);
+})();
+// toque dorado en botones
+if (!QUIETO) document.addEventListener("pointerdown", e => { const b = e.target.closest?.("button,a,label,summary"); if (!b) return;
+  const o = document.createElement("i"); o.className = "toque4"; o.style.left = e.clientX + "px"; o.style.top = e.clientY + "px"; document.body.append(o);
+  o.animate([{ transform: "scale(.4)", opacity: .9 }, { transform: "scale(4)", opacity: 0 }], { duration: 520, easing: "cubic-bezier(.2,.7,.2,1)" }).onfinish = () => o.remove(); }, { passive: true });
+
+const CRUZ4 = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M7 8h10"/></svg>';
+let palabraIdx = null;
+function mejorar4(){
+  if (view !== "public" || !$("main")) return;
+  // una palabra para ti: carta que se voltea
+  if (palabraIdx === null) palabraIdx = Math.floor(Math.random() * CINTA.length);
+  const ini = $("#inicio3");
+  if (ini) ini.insertAdjacentHTML("afterend", `<div class="adorno4">${CRUZ4}</div><section id="palabra4"><div class="palabra4">
+    <div><span class="ceja3">Para tu corazón</span><h2>Una palabra para ti</h2><p class="sub">Toca la carta y recibe un versículo. Si quieres, pide otro o compártelo con alguien que lo necesite.</p>
+      <div class="tools" style="margin-top:14px"><button type="button" class="btn" data-p4="otra">✨ Dame otra palabra</button><button type="button" class="btn ghost" data-p4="wa">Compartir</button></div></div>
+    <div class="carta4" id="carta4" role="button" tabindex="0" aria-label="Voltear la carta para ver el versículo"><div class="in">
+      <div class="cara frente"><div><svg viewBox="0 0 24 24"><path d="M12 2v20M5 8h14"/></svg><b>Toca para recibir tu palabra</b><small>Dios tiene algo para ti hoy</small></div></div>
+      <div class="cara atras"><div><q id="p4t"></q><small id="p4r"></small></div></div></div></div></div></section>`);
+  pintarPalabra();
+  // lo que vivimos: fotos y videos recientes
+  const pubs = publicaciones().filter(n => (n.fotos || []).length || (n.videos || []).length).slice(0, 8);
+  if (pubs.length && $("#eventos")) {
+    $("#eventos").insertAdjacentHTML("afterend", `<div class="adorno4">${CRUZ4}</div><section id="vivimos4"><div><span class="ceja3">Comunidad</span><h2>Lo que vivimos juntos</h2><p class="sub">Desliza para ver las últimas actividades. Toca una para ver todas las fotos y videos.</p></div>
+      <div class="vivimos4">${pubs.map(n => { const f = (n.fotos || [])[0], yt = !f && (n.videos || []).map(ytId).find(Boolean);
+        return `<button type="button" data-panel="fotos">${f ? `<img data-foto="${esc(f)}" alt="">` : yt ? `<img src="https://i.ytimg.com/vi/${esc(yt)}/hqdefault.jpg" alt="">` : ""}${!f && (n.videos || []).length ? `<i class="play4"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#3524c4"/></svg></i>` : ""}
+          <span><b>${esc(n.titulo || "Actividad")}</b>${n.fecha ? `<small>${esc(fechaLarga(n.fecha))}</small>` : ""}</span></button>`; }).join("")}</div></section>`);
+    fillPhotos($("#vivimos4"));
+  }
+  ["#gracias", "#ubicacion"].forEach(s => $(s)?.insertAdjacentHTML("beforebegin", `<div class="adorno4">${CRUZ4}</div>`));
+  // portada: el contenido se aleja suave al bajar
+  const w = $(".hero .wrap"), hero = $(".hero");
+  if (w && !QUIETO) { const f = () => { const r = hero.getBoundingClientRect(); if (r.bottom < 0) return; const k = Math.min(1, Math.max(0, -r.top / r.height)); w.style.transform = `translateY(${k * 90}px) scale(${1 - k * .06})`; w.style.opacity = String(1 - k * 1.2); };
+    addEventListener("scroll", f, { passive: true }); f(); }
+  document.querySelectorAll("#palabra4 > *, #vivimos4 > div:first-child").forEach((el, i) => { el.classList.add("rv"); el.dataset.rvk = "p4:" + i; if (rvVisto.has(el.dataset.rvk)) el.classList.add("vis"); else ioRv ? ioRv.observe(el) : el.classList.add("vis"); });
+}
+function pintarPalabra(){ const t = $("#p4t"), r = $("#p4r"); if (!t) return; const [a, b] = CINTA[palabraIdx]; t.textContent = a; r.textContent = b; }
+document.addEventListener("click", e => {
+  const c = e.target.closest("#carta4"); if (c) { c.classList.toggle("vuelta"); return; }
+  const b = e.target.closest("[data-p4]"); if (!b) return; const carta = $("#carta4");
+  if (b.dataset.p4 === "otra") { const sig = () => { let n; do n = Math.floor(Math.random() * CINTA.length); while (n === palabraIdx && CINTA.length > 1); palabraIdx = n; pintarPalabra(); carta.classList.add("vuelta"); };
+    if (carta.classList.contains("vuelta")) { carta.classList.remove("vuelta"); setTimeout(sig, 450); } else sig(); }
+  if (b.dataset.p4 === "wa") { const [t, r] = CINTA[palabraIdx]; const a = document.createElement("a"); a.href = "https://wa.me/?text=" + encodeURIComponent(`“${t}”\n— ${r}\n\n${D.cfg.iglesia || DEFAULT.iglesia} · ${urlSitio()}`); a.target = "_blank"; a.rel = "noopener"; a.click(); }
+});
+document.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.id === "carta4") { e.preventDefault(); e.target.classList.toggle("vuelta"); } });
+const _renderPublic3 = renderPublic;
+renderPublic = function(){ _renderPublic3(); mejorar4(); };
+
+/* ----- paneles del equipo con animaciones ----- */
+let claveAnim = "";
+function animarLista(root){ if (QUIETO || !root) return; let i = 0;
+  root.querySelectorAll(":scope > section > *, .events > *, .cards > *, .req, details.song, .gracias-lista > *, .opciones > *, .panel, .empty, .medidor").forEach(el => { if (el.closest(".modal")) return; el.classList.add("an4"); el.style.setProperty("--i", Math.min(i++, 12)); }); }
+function saludo4(){ const h = new Date().getHours(); return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches"; }
+function decorarEquipo(){
+  const bar = $(".adminbar .wrap > b"); if (bar && !bar.querySelector("img")) bar.insertAdjacentHTML("afterbegin", `<img src="${LOGO}" alt="">`);
+  const main = $("#root > main"); if (!main) return;
+  const clave = view + "|" + adminTab + "|" + (typeof pastorVista !== "undefined" ? pastorVista : "") + "|" + (typeof rdest !== "undefined" ? rdest : "");
+  const nueva = clave !== claveAnim; claveAnim = clave;
+  if (!main.querySelector(".hola4")) {
+    const fecha = new Date().toLocaleDateString("es-CR", { weekday: "long", day: "numeric", month: "long" });
+    let kpis = "", txt = "";
+    if (view === "admin") { const act = (D.encuestas || []).filter(x => x.activa).length, hoy = hoyISO(), prox = D.eventos.filter(e => e.repite === "semanal" || (e.fecha || "") >= hoy).length;
+      txt = "Desde aquí cuida la página de la iglesia: eventos, fotos, encuestas y más.";
+      kpis = [["ev", prox, "eventos activos", "#3524c4"], ["no", publicaciones().length, "publicaciones", "#1f9d8a"], ["en", act, "encuestas abiertas", "#d39a1c"], ["vs", "↗", "ver visitas", "#c4407a"]]
+        .map(([t, n, l, k], i) => `<button type="button" class="kpi4i" data-tab="${t}" style="--k:${k};--i:${i}"><b>${n}</b><span>${l}</span></button>`).join(""); }
+    else if (BUZON[rol]) { const campo = BUZON[rol].campo, pend = reqs.filter(r => !r[campo]).length, hoyMs = new Date().setHours(0, 0, 0, 0), deHoy = reqs.filter(r => msDe(r) >= hoyMs).length;
+      txt = pend ? `Hay ${pend} ${pend === 1 ? "petición esperando" : "peticiones esperando"} su oración. Gracias por interceder.` : "Todas las peticiones están cubiertas en oración. ¡Gloria a Dios!";
+      kpis = [[pend, "por orar", "#d23b3b"], [reqs.length - pend, "ya oradas", "#2f7a55"], [deHoy, "llegaron hoy", "#3524c4"], [reqs.length, "en total", "#d39a1c"]]
+        .map(([n, l, k], i) => `<div style="--k:${k};--i:${i}"><b>${n}</b><span>${l}</span></div>`).join(""); }
+    else if (view === "musicos") txt = "Agregue las canciones con su letra para que la administración las tenga listas.";
+    const quien = view === "admin" ? "administración" : view === "musicos" ? "músicos" : "equipo de oración";
+    main.insertAdjacentHTML("afterbegin", `<div class="hola4"><small>${esc(fecha)}</small><b>${saludo4()}, ${quien}</b><p>${txt}</p></div>${kpis ? `<div class="kpi4">${kpis}</div>` : ""}`);
+    if (!nueva) main.querySelectorAll(".hola4, .kpi4 > *").forEach(el => el.style.animation = "none");
+  }
+  if (nueva) animarLista(main.querySelector("#tab") || main);
+}
+const _renderAdmin4 = renderAdmin; renderAdmin = function(){ _renderAdmin4(); decorarEquipo(); };
+const _renderPastor4 = renderPastor; renderPastor = function(){ _renderPastor4(); decorarEquipo(); };
+const _renderMusicos4 = renderMusicos; renderMusicos = function(){ _renderMusicos4(); decorarEquipo(); };
 
 /* ---------------- Inicio ---------------- */
 renderPublic();
