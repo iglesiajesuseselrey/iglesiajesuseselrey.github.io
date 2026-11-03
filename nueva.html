@@ -853,10 +853,25 @@ async function tabAlmacenamiento(t){
   t.querySelector("[data-act='al-ref']")?.addEventListener("click", e2 => { e2.stopPropagation(); tabAlmacenamiento(t); });
   revisarEspacio();
 }
+// gráfico de a qué hora entra la gente (las horas se guardan desde el 3 de noviembre de 2026)
+function horasHTML(horas, hoyH, ultT){
+  const ht = h => `${h % 12 || 12} ${h >= 12 ? "p. m." : "a. m."}`, max = Math.max(1, ...horas), pico = horas.some(Boolean) ? horas.indexOf(Math.max(...horas)) : -1;
+  const hoyTxt = hoyH.map((n, h) => n ? `${ht(h)} (${n})` : "").filter(Boolean).join(" · ");
+  const ult = ultT ? (() => { const d = new Date(ultT), mismo = d.toDateString() === new Date().toDateString(); return `${mismo ? "hoy" : d.toLocaleDateString("es-CR", { weekday: "long", day: "numeric", month: "short" })} a las ${d.toLocaleTimeString("es-CR", { hour: "numeric", minute: "2-digit" })}`; })() : "";
+  if (pico < 0) return `<div class="medidor"><b>¿A qué hora entran?</b><p class="hint" style="margin:6px 0 0">Las horas se empiezan a guardar desde hoy. En cuanto entre alguien, aquí verá a qué hora.</p></div>`;
+  return `<div class="medidor"><b>¿A qué hora entran?</b> <span class="sub" style="font-size:13px">Más visitas entre las ${ht(pico)} y las ${ht((pico + 1) % 24)}</span>
+    ${ult ? `<p class="hint" style="margin:6px 0 10px">🕒 Última visita: <b>${esc(ult)}</b></p>` : ""}
+    <div style="display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:end;height:120px">${horas.map((n, h) => `<div title="${ht(h)}: ${n}" style="display:flex;flex-direction:column;justify-content:flex-end;height:100%"><span style="display:block;border-radius:4px 4px 0 0;background:${h === pico ? "var(--oro, #d39a1c)" : "var(--accent)"};height:${Math.max(2, 100 * n / max)}%"></span></div>`).join("")}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);font-size:11px;color:var(--muted);margin-top:4px"><span>12 a. m.</span><span>6 a. m.</span><span>12 p. m.</span><span>6 p. m.</span></div>
+    ${hoyTxt ? `<p class="hint" style="margin:10px 0 0">Hoy entraron a las: ${esc(hoyTxt)}</p>` : ""}</div>`;
+}
 async function tabVisitas(t){
   t.innerHTML = `<section><div><h2>Visitas</h2></div><div class="empty">Cargando visitas…</div></section>`;
-  let por = {};
-  try { (await getDocs(collection(fb, "visitas"))).docs.forEach(d => por[d.id] = +d.data().n || 0); }
+  let por = {}, horas = Array(24).fill(0), hoyH = Array(24).fill(0), ultT = 0;
+  const hoyId = hoyISO();
+  try { (await getDocs(collection(fb, "visitas"))).docs.forEach(d => { const x = d.data(); por[d.id] = +x.n || 0;
+    Object.entries(x.h || {}).forEach(([k, v]) => { const i = +k.slice(1); if (i >= 0 && i < 24) { horas[i] += +v || 0; if (d.id === hoyId) hoyH[i] += +v || 0; } });
+    const t = x.t && x.t.toMillis ? x.t.toMillis() : 0; if (t > ultT) ultT = t; }); }
   catch (x) { console.error(x); t.innerHTML = `<div class="empty">No se pudieron cargar las visitas. Revisa las reglas de Firestore.</div>`; return; }
   const dia = k => { const d = new Date(); d.setDate(d.getDate() - k); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
   const suma = n => Array.from({length:n}, (_, k) => por[dia(k)] || 0).reduce((a, b) => a + b, 0);
@@ -868,6 +883,7 @@ async function tabVisitas(t){
     <div class="medidor"><b>Últimos 14 días</b>
       <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end;height:140px">${ult.map(k => `<div title="${esc(k)}: ${por[k]||0}" style="display:grid;align-content:end;justify-items:center;gap:3px;height:100%"><small style="font-size:11px">${por[k]||""}</small><span style="width:100%;border-radius:5px 5px 0 0;background:var(--accent);height:${Math.max(2, 100*(por[k]||0)/max)}px"></span></div>`).join("")}</div>
       <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;font-size:10px;color:var(--muted);text-align:center">${ult.map(k => `<span>${+k.slice(8)}</span>`).join("")}</div></div>
+    ${horasHTML(horas, hoyH, ultT)}
     <p class="hint">“Últimos 7 días” suma las visitas de cada día: si alguien entra lunes y martes, cuenta 2.</p></section>`;
   t.querySelector("[data-vref]").addEventListener("click", () => tabVisitas(t));
 }
@@ -898,7 +914,8 @@ async function contarVisita(){
     if (localStorage.getItem("equipo") === "1") return;
     const hoy = hoyISO();
     if (localStorage.getItem("visita-dia") === hoy) return;
-    await setDoc(doc(fb, "visitas", hoy), { n: increment(1) }, { merge: true });
+    const hh = "h" + String(new Date().getHours()).padStart(2, "0");   // a qué hora entró (sin datos personales)
+    await setDoc(doc(fb, "visitas", hoy), { n: increment(1), h: { [hh]: increment(1) }, t: serverTimestamp() }, { merge: true });
     localStorage.setItem("visita-dia", hoy);
   } catch {}
 }

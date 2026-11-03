@@ -102,9 +102,14 @@ service cloud.firestore {
     // Visitas: un contador por día (sin datos personales). Cualquiera suma 1; solo el admin lo lee.
     match /visitas/{dia} {
       allow read: if isAdmin();
+      // n: visitas del día · h: visitas por hora (h00…h23) · t: hora de la última visita
       allow create: if dia.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == 1;
-      allow update: if request.resource.data.keys().hasOnly(['n']) && request.resource.data.n == resource.data.n + 1;
+        && request.resource.data.keys().hasOnly(['n','h','t']) && request.resource.data.n == 1
+        && (!('h' in request.resource.data) || (request.resource.data.h is map && request.resource.data.h.size() <= 24))
+        && (!('t' in request.resource.data) || request.resource.data.t == request.time);
+      allow update: if request.resource.data.keys().hasOnly(['n','h','t']) && request.resource.data.n == resource.data.n + 1
+        && (!('h' in request.resource.data) || (request.resource.data.h is map && request.resource.data.h.size() <= 24))
+        && (!('t' in request.resource.data) || request.resource.data.t == request.time);
     }
 
     // Cambios a la página: solo el admin los pide, ve y borra. Los marca como hechos GitHub (cuenta de servicio).
