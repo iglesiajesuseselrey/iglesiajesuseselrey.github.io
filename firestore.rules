@@ -40,7 +40,7 @@ service cloud.firestore {
     match /peticiones/{id} {
       allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','medio','destino','tema','texto','fecha','codigo'])
         && (!('codigo' in request.resource.data) || (request.resource.data.codigo is string
-            && request.resource.data.codigo.matches('^[a-z0-9]{20,40}$')))
+            && request.resource.data.codigo.matches('^[a-z0-9]{6,40}$')))
         && request.resource.data.anonimo is bool
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
         && request.resource.data.contactar is bool
@@ -66,18 +66,29 @@ service cloud.firestore {
       allow delete: if isPastores();
     }
 
-    // Respuestas a las peticiones (también anónimas). El documento se llama con el código secreto
-    // que solo guarda el celular de quien envió la petición: puede leerlo uno por uno, pero nadie puede listarlos.
+    // Estado y respuesta de cada petición (también anónimas). El documento se llama con el número
+    // de la petición (6 dígitos) que recibe quien la envía: se busca uno por uno, nadie puede listarlos.
+    function respuestaPastor() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['pid','estado','mensaje','por','fecha','tema'])
+        && d.pid is string
+        && d.estado in ['recibida','orada']
+        && d.mensaje is string && d.mensaje.size() <= 500
+        && d.por is string && d.por.size() <= 60
+        && (!('tema' in d) || (d.tema is string && d.tema.size() <= 40))
+        && d.fecha == request.time;
+    }
     match /respuestas/{codigo} {
       allow get: if true;
       allow list: if false;
-      allow create, update: if request.resource.data.keys().hasOnly(['pid','estado','mensaje','por','fecha'])
-        && request.resource.data.pid is string
-        && request.resource.data.estado in ['recibida','orada']
-        && request.resource.data.mensaje is string && request.resource.data.mensaje.size() <= 500
-        && request.resource.data.por is string && request.resource.data.por.size() <= 60
-        && request.resource.data.fecha == request.time
-        && puedeResponder(request.resource.data.pid, codigo);
+      // Quien envía la petición aparta su número (solo si no existe todavía: crear nunca sobrescribe).
+      allow create: if (codigo.matches('^[0-9]{6}$')
+          && request.resource.data.keys().hasOnly(['estado','tema','fecha'])
+          && request.resource.data.estado == 'enviada'
+          && request.resource.data.tema is string && request.resource.data.tema.size() <= 40
+          && request.resource.data.fecha == request.time)
+        || (respuestaPastor() && puedeResponder(request.resource.data.pid, codigo));
+      allow update: if respuestaPastor() && puedeResponder(request.resource.data.pid, codigo);
       allow delete: if isPastores();
     }
 
