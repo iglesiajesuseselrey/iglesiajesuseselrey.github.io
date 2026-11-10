@@ -282,6 +282,19 @@ input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 
 .done h3{margin:0;font-family:var(--font-display);font-size:24px;font-weight:800}
 .done p{margin:0;color:var(--muted);max-width:42ch}
 .palabra{background:var(--soft);border-radius:14px;padding:14px 16px;font-style:italic;color:var(--ink);max-width:44ch}
+/* Mis peticiones (respuestas de los pastores) */
+#mispet{margin-top:18px}
+.mispet summary .badge{margin:0}
+.mplist{display:grid;gap:10px;padding:0 14px 14px}
+.mp{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.mp.nuevo{border-color:var(--accent)}
+.mp .top{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:13px;color:var(--muted)}
+.mp .est{font-weight:800;color:var(--ink);font-size:14px}
+.mp .est.ok{color:var(--accent)}
+.mp blockquote{margin:0;background:var(--surface);border-radius:10px;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink);font-size:15px}
+.mp blockquote small{display:block;margin-top:6px;color:var(--muted);font-weight:700;font-size:12px}
+.resp-p{font-size:14px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 12px;overflow-wrap:anywhere}
+.chips button.frase{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;cursor:pointer;color:var(--muted);background:var(--surface);text-align:left}
 .palabra small{display:block;font-style:normal;font-weight:800;font-size:12px;letter-spacing:.06em;color:var(--muted);margin-top:6px;text-transform:uppercase}
 
 footer{border-top:1px solid var(--line);padding-block:28px;text-align:center;color:var(--muted);font-size:14px}
@@ -739,7 +752,7 @@ const BUZON = {
 /* ===================================================================== */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, increment, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -1092,6 +1105,7 @@ function renderPublic(){
       <div class="prayer">
         <div class="intro"><h2>Peticiones de oración</h2>
           <p>Escribe tu petición y nuestro pastor orará por ella. Tú decides si dejas tu nombre o la envías de forma anónima. Nadie más puede ver lo que escribes.</p>
+          <div id="mispet" hidden></div>
         </div>
         <div class="card" id="pcard"></div>
       </div>
@@ -1362,11 +1376,14 @@ function renderBiblia(body, libro){
 let lastSent = 0, lastContact = false;
 function renderPrayerForm(done){
   const c = $("#pcard"); if (!c) return;
+  escucharMisPeticiones();
   if (done) {
     const [t, r] = CINTA[cintaIdx];
     c.innerHTML = `<div class="done"><div class="ring" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
       <h3>Tu petición fue enviada</h3><p>${lastContact?"Un pastor te contactará pronto. ":""}Estaremos orando por ti. Aquí tienes una palabra para hoy:</p>
       <div class="palabra">“${esc(t)}”<small>${esc(r)}</small></div>
+      <p class="hint">Cuando los pastores la lean o te respondan, lo verás en <b>«Mis peticiones»</b>, aquí en esta página.</p>
+      ${("Notification" in window) && Notification.permission === "default" ? `<button class="btn" type="button" data-act="mp-avisos">🔔 Avisarme cuando me respondan</button>` : ""}
       <button class="btn ghost" type="button" data-act="otra">Escribir otra petición</button></div>`;
     return;
   }
@@ -1424,14 +1441,119 @@ function renderPrayerForm(done){
     if (Date.now() - lastSent < 20000) return err("Espera unos segundos antes de enviar otra petición.");
     const b = $("#psend"); b.disabled = true; b.textContent = "Enviando…"; err("");
     try {
-      await addDoc(collection(fb,"peticiones"), { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, medio, destino, tema, texto, fecha:serverTimestamp() });
+      const codigo = nuevoCodigo(), datos = { anonimo:anon, nombre:anon?"":nombre, contactar, telefono, medio, destino, tema, texto, fecha:serverTimestamp() };
+      let conCodigo = true;
+      // Si las reglas todavía no aceptan el código, se envía igual sin él (la petición nunca se pierde).
+      try { await addDoc(collection(fb,"peticiones"), { ...datos, codigo }); }
+      catch (x) { if (x?.code !== "permission-denied") throw x; conCodigo = false; await addDoc(collection(fb,"peticiones"), datos); }
       lastSent = Date.now(); lastContact = contactar;
+      if (conCodigo) guardarMiPeticion({ c: codigo, t: Date.now(), tema });
       const avisoTxt = `Para: ${DESTINOS[destino] || "Pastores"} · Motivo: ${tema || "Otro"}${contactar ? " · Pide que lo contacten" : ""}`;
       ntfyEnviar("pastores", "🙏 Nueva petición de oración", avisoTxt, ["pray"]);
       if (["matrimonios", "jovenes", "varones", "ninos"].includes(destino)) ntfyEnviar(destino, "🙏 Nueva petición de oración", avisoTxt, ["pray"]);
       await avanzarCinta();
       renderPrayerForm(true);
     } catch (x) { console.error(x); err("No se pudo enviar. Revisa tu conexión e intenta de nuevo."); b.disabled=false; b.textContent="Enviar petición"; }
+  });
+}
+
+/* ---------------- Mis peticiones: respuestas de los pastores (también si es anónima) ----------------
+   Cada petición lleva un código secreto que solo queda guardado en el celular de quien la envió.
+   Con ese código lee la respuesta (colección "respuestas"); nadie más sabe de quién es.
+   En el celular solo se guarda el código, el motivo y la fecha (no el texto de la petición). */
+const MP_KEY = "mis-peticiones", MP_VISTO = "mis-peticiones-vistas", MP_AVISO = "mis-peticiones-avisadas";
+const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const msF = f => f?.toMillis ? f.toMillis() : 0;
+function nuevoCodigo(){
+  const abc = "abcdefghijklmnopqrstuvwxyz0123456789", a = new Uint8Array(24);
+  crypto.getRandomValues(a); return Array.from(a, b => abc[b % 36]).join("");
+}
+const misResp = {}, misUnsub = {};
+let mpAbierto = false;
+const misPeticiones = () => lsGet(MP_KEY, []).filter(p => p && typeof p.c === "string").slice(0, 15);
+function guardarMiPeticion(p){ lsSet(MP_KEY, [p, ...misPeticiones()].slice(0, 15)); mpAbierto = true; escucharMisPeticiones(); }
+function escucharMisPeticiones(){
+  const lista = misPeticiones();
+  for (const p of lista) if (!misUnsub[p.c]) {
+    misUnsub[p.c] = onSnapshot(doc(fb, "respuestas", p.c), s => {
+      const r = s.exists() ? s.data() : null; misResp[p.c] = r;
+      const t = r ? msF(r.fecha) : 0, av = lsGet(MP_AVISO, {});
+      if (t && t > (av[p.c] || 0)) {
+        av[p.c] = t; lsSet(MP_AVISO, av);
+        mostrarNotif("🙏 Tu petición de oración", r.mensaje ? `${r.por || "Los pastores"}: ${r.mensaje}` : r.estado === "orada" ? "Ya oraron por tu petición." : "Los pastores ya leyeron tu petición.");
+      }
+      renderMisPeticiones();
+    }, () => {});
+  }
+  renderMisPeticiones();
+}
+function renderMisPeticiones(){
+  const box = $("#mispet"); if (!box) return;
+  const lista = misPeticiones();
+  if (!lista.length) { box.hidden = true; box.innerHTML = ""; return; }
+  const vistos = lsGet(MP_VISTO, {});
+  const esNuevo = p => { const r = misResp[p.c]; return !!r && msF(r.fecha) > (vistos[p.c] || 0); };
+  const nuevas = lista.filter(esNuevo).length;
+  const dia = t => new Date(t).toLocaleDateString("es-CR", { day: "numeric", month: "short" });
+  box.hidden = false;
+  box.innerHTML = `<details class="song mispet" ${mpAbierto ? "open" : ""}>
+    <summary><span class="t"><h3>Mis peticiones</h3><small>${nuevas ? (nuevas === 1 ? "Tienes 1 respuesta nueva" : `Tienes ${nuevas} respuestas nuevas`) : "Mira si los pastores ya la leyeron"}</small></span>${nuevas ? `<span class="badge">${nuevas}</span>` : ""}<span class="chev">›</span></summary>
+    <div class="mplist">
+      ${lista.map(p => { const r = misResp[p.c];
+        const est = !r ? `<span class="est">⏳ Enviada</span><span>Esperando que la lean</span>`
+          : r.estado === "orada" ? `<span class="est ok">🙏 Ya oraron por ti</span>`
+          : `<span class="est ok">✓ Recibida</span><span>Ya la leyeron</span>`;
+        return `<div class="mp ${esNuevo(p) ? "nuevo" : ""}"><div class="top">${est}${esNuevo(p) ? `<span class="tag nueva">Nuevo</span>` : ""}<span>· ${esc(p.tema || "Petición")} · ${dia(p.t)}</span></div>
+          ${r?.mensaje ? `<blockquote>${esc(r.mensaje)}<small>— ${esc(r.por || "Los pastores")}</small></blockquote>` : ""}</div>`; }).join("")}
+      ${("Notification" in window) && Notification.permission === "default" ? `<button class="btn small ghost" type="button" data-act="mp-avisos">🔔 Avisarme cuando me respondan</button>` : ""}
+      <p class="hint">Solo se ven en este celular. Los pastores no saben que son tuyas si las enviaste de forma anónima.</p>
+    </div></details>`;
+  const d = $("details", box);
+  d.addEventListener("toggle", () => {
+    mpAbierto = d.open; if (!d.open) return;
+    const v = lsGet(MP_VISTO, {}); lista.forEach(p => { const r = misResp[p.c]; if (r) v[p.c] = msF(r.fecha); }); lsSet(MP_VISTO, v);
+    const b = $("summary .badge", d); if (b) b.remove();
+  });
+}
+
+/* ---------------- Responder una petición (pastores y ministerios) ---------------- */
+const POR_ROL = { pastores: "Los Pastores", matrimonios: "Los Pastores de Matrimonios", jovenes: "Los Pastores de Jóvenes", varones: "El Pastor de Varones", ninos: "Los Pastores de Niños" };
+const FRASES_RESP = [
+  "Recibimos tu petición y ya estamos orando por ti. Dios te bendiga.",
+  "Estamos contigo en oración. Confía en el Señor, Él tiene cuidado de ti.",
+  "Oramos por ti. Si necesitas hablar con un pastor, búscanos el domingo o escríbenos."
+];
+async function guardarRespuesta(r, estado, mensaje, extra){
+  const por = r.resp?.por && mensaje === (r.resp.mensaje || "") ? r.resp.por : (POR_ROL[rol] || "Los Pastores");
+  const b = writeBatch(fb);
+  b.set(doc(fb, "respuestas", r.codigo), { pid: r.id, estado, mensaje, por, fecha: serverTimestamp() });
+  b.update(doc(fb, "peticiones", r.id), { ...(extra || {}), resp: { estado, mensaje, por } });
+  await b.commit();
+}
+function responderModal(r){
+  const campo = BUZON[rol]?.campo;
+  const estado = () => (r.resp?.estado === "orada" || (campo && r[campo])) ? "orada" : "recibida";
+  modal(`<div class="avisos-m" style="display:grid;gap:14px">
+    <div class="sheet-head"><h3>💬 Responder</h3><button class="x" data-close aria-label="Cerrar">×</button></div>
+    <p class="hint">${r.anonimo ? "Es anónima: no sabemos quién es, pero solo esa persona verá su respuesta, en la página, en «Mis peticiones»." : "Solo esa persona verá su respuesta, en la página, en «Mis peticiones»."}</p>
+    <div class="chips">${FRASES_RESP.map((f, i) => `<button type="button" class="frase" data-frase="${i}">${esc(f)}</button>`).join("")}</div>
+    <div class="field"><label class="label" for="rp-t">Mensaje</label><textarea id="rp-t" maxlength="500" placeholder="Escriba un mensaje de aliento…">${esc(r.resp?.mensaje || "")}</textarea><div class="count"><span id="rp-n">${(r.resp?.mensaje || "").length}</span> / 500</div></div>
+    <p class="err" id="rp-e" hidden></p>
+    <div class="actions">${r.resp?.mensaje ? "" : `<button type="button" class="btn ghost" data-rp="solo">Solo avisar que la recibimos</button>`}<button class="btn" type="button" data-rp="enviar">Enviar respuesta</button></div>
+  </div>`, (m, close) => {
+    const ta = $("#rp-t", m);
+    ta.addEventListener("input", () => $("#rp-n", m).textContent = ta.value.length);
+    m.addEventListener("click", async e => {
+      const f = e.target.closest("[data-frase]"); if (f) { ta.value = FRASES_RESP[+f.dataset.frase]; $("#rp-n", m).textContent = ta.value.length; ta.focus(); return; }
+      const b = e.target.closest("[data-rp]"); if (!b) return;
+      const msg = b.dataset.rp === "solo" ? "" : ta.value.trim();
+      const err = t => { const x = $("#rp-e", m); x.textContent = t; x.hidden = !t; };
+      if (b.dataset.rp === "enviar" && msg.length < 2) return err("Escriba un mensaje, o toque una de las frases de arriba.");
+      m.querySelectorAll("[data-rp]").forEach(x => x.disabled = true); err("");
+      try { await guardarRespuesta(r, estado(), msg); close(); toast(msg ? "Respuesta enviada ✓" : "Le avisamos que la recibieron ✓"); }
+      catch (x) { console.error(x); err("No se pudo enviar. Revise su conexión e intente de nuevo."); m.querySelectorAll("[data-rp]").forEach(x => x.disabled = false); }
+    });
   });
 }
 
@@ -1629,7 +1751,9 @@ function renderPastor(){
       ${r.contactar&&r.telefono?`<div class="kv"><div><span>${r.medio==="whatsapp"?"💬 Quiere que le escriban por WhatsApp":r.medio==="llamada"?"📞 Quiere que lo llamen":"📞 Quiere ser contactado"}</span><b>${esc(r.telefono)}</b></div></div>
         <div class="tools"><a class="btn small" href="https://wa.me/${waNum(r.telefono)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn small ghost" href="tel:${tel8(r.telefono)}">Llamar</a></div>`:""}
       <p>${esc(r.texto)}</p>
+      ${r.codigo ? `<div class="resp-p">${r.resp ? (r.resp.mensaje ? `💬 Respuesta${r.resp.por ? ` (${esc(r.resp.por)})` : ""}: «${esc(r.resp.mensaje)}»` : "✓ Se le avisó que la recibieron") + (r.resp.estado === "orada" ? " · 🙏 Ya sabe que oraron" : "") : "Todavía no se le ha respondido. La persona puede ver en la página si ya la leyeron."}</div>` : ""}
       <div class="tools" style="justify-content:flex-end">
+        ${r.codigo ? `<button class="btn small ghost" data-resp="${esc(r.id)}">💬 ${r.resp?.mensaje ? "Cambiar respuesta" : "Responder"}</button>` : ""}
         <button class="btn small ${isOr(r)?"ghost":""}" data-pray="${esc(r.id)}">${isOr(r)?"✓ Orado":"Marcar como orado"}</button>
         ${rol==="pastores"?`<button class="btn small danger" data-delreq="${esc(r.id)}">Borrar</button>`:""}
       </div></article>`).join("")
@@ -2416,7 +2540,7 @@ function formCancion(cv, t){
 /* ---------------- Clics ---------------- */
 document.addEventListener("keydown", e => { if (e.key === "Escape" && drawerEl && !document.querySelector(".modal,.lb")) closeAll(); });
 document.addEventListener("click", async e => {
-  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-delreq],[data-panel],[data-goto],[data-rdest],[data-pvista],[data-cal]"); if (!el) return;
+  const el = e.target.closest("[data-act],[data-copy],[data-lb],[data-tab],[data-rf],[data-pray],[data-resp],[data-delreq],[data-panel],[data-goto],[data-rdest],[data-pvista],[data-cal]"); if (!el) return;
   if (el.dataset.panel) { openPanel(el.dataset.panel); return; }
   if (el.dataset.cal) { const ev = D.eventos.find(x => x.id === el.dataset.cal); if (ev) agregarCalendario(ev); return; }
   if (el.dataset.goto) { const id = el.dataset.goto; closeAll(); setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:"smooth"}), 320); return; }
@@ -2426,7 +2550,13 @@ document.addEventListener("click", async e => {
   if (el.dataset.rf) { rfilter = el.dataset.rf; renderPastor(); return; }
   if (el.dataset.rdest) { rdest = el.dataset.rdest; renderPastor(); return; }
   if (el.dataset.pvista) { pastorVista = el.dataset.pvista; renderPastor(); return; }
-  if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; const campo = BUZON[rol]?.campo; if (!campo) return; try { await updateDoc(doc(fb,"peticiones",r.id), {[campo]:!r[campo]}); } catch { toast("No se pudo actualizar."); el.disabled = false; } return; }
+  if (el.dataset.pray) { const r = reqs.find(x=>x.id===el.dataset.pray); if (!r) return; el.disabled = true; const campo = BUZON[rol]?.campo; if (!campo) return;
+    try {
+      // Al marcar como orado, la persona ve en «Mis peticiones» que ya oraron por ella.
+      if (!r[campo] && r.codigo) await guardarRespuesta(r, "orada", r.resp?.mensaje || "", {[campo]: true});
+      else await updateDoc(doc(fb,"peticiones",r.id), {[campo]:!r[campo]});
+    } catch (x) { console.error(x); toast("No se pudo actualizar."); el.disabled = false; } return; }
+  if (el.dataset.resp) { const r = reqs.find(x=>x.id===el.dataset.resp); if (r) responderModal(r); return; }
   if (el.dataset.delreq) {
     if (el.dataset.sure !== "1") { el.dataset.sure = "1"; el.textContent = "¿Seguro? Toca otra vez"; setTimeout(()=>{ if (el.isConnected){ el.dataset.sure=""; el.textContent="Borrar"; } }, 4000); return; }
     try { await deleteDoc(doc(fb,"peticiones",el.dataset.delreq)); toast("Petición borrada"); } catch { toast("No se pudo borrar."); }
@@ -2439,6 +2569,7 @@ document.addEventListener("click", async e => {
   if (a==="ir-gracias") { if (drawerEl) closeAll(); const g = $("#gracias"); if (g) setTimeout(() => g.scrollIntoView({behavior:"smooth"}), drawerEl ? 300 : 0); else openPanel("gracias"); return; }
   if (a==="ver-sitio") { view = "public"; await loadPublic(); renderPublic(); window.scrollTo(0,0); return; }
   if (a==="otra") return renderPrayerForm(false);
+  if (a==="mp-avisos") { try { const p = await Notification.requestPermission(); if (p === "granted") { mostrarNotif("Avisos activados", "Te avisaremos cuando respondan tu petición."); el.remove(); } } catch {} renderMisPeticiones(); return; }
   if (a==="excel") return descargarExcel();
   if (a==="avisos") return avisosModal();
   if (a==="aviso-ok") { avisoCerrado = true; guardarVisto(Date.now()); renderPastor(); return; }

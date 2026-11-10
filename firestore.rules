@@ -15,11 +15,32 @@ service cloud.firestore {
     function soloCambia(campo) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([campo]);
     }
+    // Al marcar como orado o responder, solo cambia ese campo y/o la copia de la respuesta ("resp").
+    function cambiaOradoOResp(campo) {
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly([campo, 'resp'])
+        && (!('resp' in d) || (d.resp is map && d.resp.keys().hasOnly(['estado','mensaje','por'])
+            && d.resp.estado in ['recibida','orada']
+            && d.resp.mensaje is string && d.resp.mensaje.size() <= 500
+            && d.resp.por is string && d.resp.por.size() <= 60));
+    }
+    // Puede responder quien puede leer la petición, y el código debe ser el de esa petición.
+    function puedeResponder(pid, codigo) {
+      let p = get(/databases/$(database)/documents/peticiones/$(pid)).data;
+      return p.get('codigo', '') == codigo
+        && (isPastores()
+          || (isMatrimonios() && p.destino == 'matrimonios')
+          || (isJovenes() && p.destino == 'jovenes')
+          || (isVarones() && p.destino == 'varones')
+          || (isNinos() && p.destino == 'ninos'));
+    }
 
     // Peticiones: cualquiera puede ENVIAR.
     // pastores ve todas (incluye Mujeres); matrimonios, jovenes, varones y ninos solo las dirigidas a ellos; admin no ve ninguna.
     match /peticiones/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','medio','destino','tema','texto','fecha'])
+      allow create: if request.resource.data.keys().hasOnly(['anonimo','nombre','contactar','telefono','medio','destino','tema','texto','fecha','codigo'])
+        && (!('codigo' in request.resource.data) || (request.resource.data.codigo is string
+            && request.resource.data.codigo.matches('^[a-z0-9]{20,40}$')))
         && request.resource.data.anonimo is bool
         && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 60
         && request.resource.data.contactar is bool
@@ -37,11 +58,26 @@ service cloud.firestore {
         || (isJovenes() && resource.data.destino == 'jovenes')
         || (isVarones() && resource.data.destino == 'varones')
         || (isNinos() && resource.data.destino == 'ninos');
-      allow update: if (isPastores() && soloCambia('oradoPastores'))
-        || (isMatrimonios() && resource.data.destino == 'matrimonios' && soloCambia('oradoMatrimonios'))
-        || (isJovenes() && resource.data.destino == 'jovenes' && soloCambia('oradoJovenes'))
-        || (isVarones() && resource.data.destino == 'varones' && soloCambia('oradoVarones'))
-        || (isNinos() && resource.data.destino == 'ninos' && soloCambia('oradoNinos'));
+      allow update: if (isPastores() && cambiaOradoOResp('oradoPastores'))
+        || (isMatrimonios() && resource.data.destino == 'matrimonios' && cambiaOradoOResp('oradoMatrimonios'))
+        || (isJovenes() && resource.data.destino == 'jovenes' && cambiaOradoOResp('oradoJovenes'))
+        || (isVarones() && resource.data.destino == 'varones' && cambiaOradoOResp('oradoVarones'))
+        || (isNinos() && resource.data.destino == 'ninos' && cambiaOradoOResp('oradoNinos'));
+      allow delete: if isPastores();
+    }
+
+    // Respuestas a las peticiones (también anónimas). El documento se llama con el código secreto
+    // que solo guarda el celular de quien envió la petición: puede leerlo uno por uno, pero nadie puede listarlos.
+    match /respuestas/{codigo} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if request.resource.data.keys().hasOnly(['pid','estado','mensaje','por','fecha'])
+        && request.resource.data.pid is string
+        && request.resource.data.estado in ['recibida','orada']
+        && request.resource.data.mensaje is string && request.resource.data.mensaje.size() <= 500
+        && request.resource.data.por is string && request.resource.data.por.size() <= 60
+        && request.resource.data.fecha == request.time
+        && puedeResponder(request.resource.data.pid, codigo);
       allow delete: if isPastores();
     }
 
